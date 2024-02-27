@@ -22,7 +22,6 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -364,25 +363,27 @@ public class FileUtils extends org.apache.commons.io.FileUtils
      * @author bin
      **/
     public static String calcSize(Long size){
-        //获取到的size为：1705230
-        int GB = 1024 * 1024 * 1024;//定义GB的计算常量
-        int MB = 1024 * 1024;//定义MB的计算常量
-        int KB = 1024;//定义KB的计算常量
-        DecimalFormat df = new DecimalFormat("0.00");//格式化小数
-        String resultSize = "";
-        if (size / GB >= 1) {
-            //如果当前Byte的值大于等于1GB
-            resultSize = df.format(size / (float) GB) + "GB";
-        } else if (size / MB >= 1) {
-            //如果当前Byte的值大于等于1MB
-            resultSize = df.format(size / (float) MB) + "MB";
-        } else if (size / KB >= 1) {
-            //如果当前Byte的值大于等于1KB
-            resultSize = df.format(size / (float) KB) + "KB";
-        } else {
-            resultSize = size + "B";
+        long kb = 1024;
+        long mb = kb * 1024;
+        long gb = mb * 1024;
+        if (size >= gb)
+        {
+            return String.format("%.1f GB", (float) size / gb);
         }
-        return resultSize;
+        else if (size >= mb)
+        {
+            float f = (float) size / mb;
+            return String.format(f > 100 ? "%.0f MB" : "%.1f MB", f);
+        }
+        else if (size >= kb)
+        {
+            float f = (float) size / kb;
+            return String.format(f > 100 ? "%.0f KB" : "%.1f KB", f);
+        }
+        else
+        {
+            return String.format("%d B", size);
+        }
     }
 
 
