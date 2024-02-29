@@ -11,5 +11,5 @@ public interface NodeDao extends MongoRepository<Node, String> {
 
     Node findFirstByIp(String ip);
 
-
+    Node findFirstById(String id);
 }

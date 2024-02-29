@@ -8,14 +8,14 @@ import lombok.NoArgsConstructor;
 import java.io.Serializable;
 
 /**
- * 接口返回格式
+ * 门户接口返回格式
  *
  */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class JsonResult<T> implements Serializable {
+public class PortalResponse<T> implements Serializable {
 
     private static final long serialVersionUID = 1L;
 

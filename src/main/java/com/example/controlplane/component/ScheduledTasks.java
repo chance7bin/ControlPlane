@@ -24,8 +24,9 @@ public class ScheduledTasks {
     INodeService nodeService;
 
     @Scheduled(fixedRate = _5MINUTE) // 每隔5秒执行一次
-    public void updateNode() {
-        nodeService.updateNode();
+    public void updateRemoteNode() {
+        log.info("update remote node...");
+        // nodeService.updateRemoteNode();
     }
 
 }

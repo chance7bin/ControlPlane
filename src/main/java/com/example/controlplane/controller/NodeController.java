@@ -2,6 +2,7 @@ package com.example.controlplane.controller;
 
 import com.example.controlplane.entity.dto.ApiResponse;
 import com.example.controlplane.entity.dto.FindDTO;
+import com.example.controlplane.entity.dto.LabelDTO;
 import com.example.controlplane.entity.dto.page.PageInfo;
 import com.example.controlplane.entity.po.Node;
 import com.example.controlplane.service.INodeService;
@@ -30,10 +31,23 @@ public class NodeController {
         return ApiResponse.success(nodeService.getTaskNodeList());
     }
 
-    @ApiOperation("获取节点状态")
-    @GetMapping("/status")
-    public ApiResponse getStatus(@RequestParam("ip") String ip) {
+    @ApiOperation("根据ip获取节点信息")
+    @GetMapping("/info/ip/{ip}")
+    public ApiResponse getNodeInfoByIp(@PathVariable("ip") String ip) {
         Node node = nodeService.getNodeByIp(ip);
+        if (node == null) {
+            return ApiResponse.error("节点不存在");
+        }
+        return ApiResponse.success(node);
+    }
+
+    @ApiOperation("根据id获取节点信息")
+    @GetMapping("/info/id/{id}")
+    public ApiResponse getNodeInfoById(@PathVariable("id") String id) {
+        Node node = nodeService.getNodeById(id);
+        if (node == null) {
+            return ApiResponse.error("节点不存在");
+        }
         return ApiResponse.success(node);
     }
 
@@ -44,6 +58,14 @@ public class NodeController {
         PageInfo<Node> res = nodeService.getNodeList(findDTO);
 
         return ApiResponse.success(res);
+    }
+
+
+    @ApiOperation("修改节点的标签信息")
+    @PostMapping("/label/update")
+    public ApiResponse updateLabel(@RequestBody LabelDTO labelDTO) {
+        nodeService.updateLabel(labelDTO);
+        return ApiResponse.success();
     }
 
 

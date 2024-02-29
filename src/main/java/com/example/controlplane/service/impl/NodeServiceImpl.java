@@ -8,11 +8,14 @@ import com.example.controlplane.dao.NodeDao;
 import com.example.controlplane.entity.bo.Label;
 import com.example.controlplane.entity.bo.Server;
 import com.example.controlplane.entity.dto.FindDTO;
+import com.example.controlplane.entity.dto.LabelDTO;
 import com.example.controlplane.entity.dto.page.PageInfo;
 import com.example.controlplane.entity.po.Node;
+import com.example.controlplane.exception.ServiceException;
 import com.example.controlplane.manager.ThreadPoolManager;
 import com.example.controlplane.service.INodeService;
 import com.example.controlplane.service.ITaskServerService;
+import com.example.controlplane.utils.Threads;
 import com.example.controlplane.utils.file.FileUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,7 +67,7 @@ public class NodeServiceImpl implements INodeService {
     }
 
     @Override
-    public void updateNode() {
+    public void updateRemoteNode() {
         List<JSONObject> nodes = getTaskNodeList();
         for (JSONObject node : nodes) {
             String ip = node.getString("ip");
@@ -100,7 +103,8 @@ public class NodeServiceImpl implements INodeService {
                     }
                 };
                 ThreadPoolManager.instance().execute(task);
-
+                // 睡100ms
+                Threads.sleep(100);
             } else {
                 updateNodeWhenOffline(ip);
             }
@@ -112,9 +116,54 @@ public class NodeServiceImpl implements INodeService {
     public PageInfo<Node> getNodeList(FindDTO findDTO) {
 
         Page<Node> nodePage = nodeDao.findAll(findDTO.getPageable());
-        PageInfo<Node> res = new PageInfo<>(nodePage);
+        PageInfo<Node> res = PageInfo.of(nodePage);
         return res;
 
+    }
+
+    @Override
+    public void updateLabel(LabelDTO labelDTO) {
+        Node node = getNodeById(labelDTO.getId());
+        if (node == null) {
+            throw new ServiceException("节点不存在");
+        }
+
+        List<Label> oldLabels = node.getLabels();
+        if (oldLabels == null) {
+            oldLabels = new ArrayList<>();
+        }
+        Label label = labelDTO.getLabel();
+
+        switch (labelDTO.getType()) {
+            case 1:
+            case 2:
+                boolean exist = false;
+                for (Label oldLabel : oldLabels) {
+                    if (oldLabel.getKey().equals(label.getKey())) {
+                        oldLabel.setValue(label.getValue());
+                        exist = true;
+                        break;
+                    }
+                }
+                if (!exist) {
+                    oldLabels.add(label);
+                }
+                break;
+            case 3:
+                oldLabels.removeIf(oldLabel -> oldLabel.getKey().equals(label.getKey()));
+                break;
+            default:
+                throw new ServiceException("操作类型错误");
+        }
+
+
+        node.setLabels(oldLabels);
+        nodeDao.save(node);
+    }
+
+    @Override
+    public Node getNodeById(String id) {
+        return nodeDao.findFirstById(id);
     }
 
     private void updateNodeLabelsByServer(Node node, Server server) {
@@ -126,14 +175,27 @@ public class NodeServiceImpl implements INodeService {
         for (java.lang.reflect.Field field : server.getClass().getDeclaredFields()) {
             field.setAccessible(true);
             try {
-                Label label = new Label();
-                label.setKey(field.getName());
-                label.setValue(field.get(server).toString());
-                labels.add(label);
+                // 有则更新，无则添加
+                boolean exist = false;
+                for (Label label : labels) {
+                    if (label.getKey().equals(field.getName())) {
+                        label.setValue(field.get(server).toString());
+                        exist = true;
+                        break;
+                    }
+                }
+                if (!exist) {
+                    Label label = new Label();
+                    label.setKey(field.getName());
+                    label.setValue(field.get(server).toString());
+                    label.setEditable(false);
+                    labels.add(label);
+                }
             } catch (IllegalAccessException e) {
                 e.printStackTrace();
             }
         }
+
         node.setLabels(labels);
     }
 

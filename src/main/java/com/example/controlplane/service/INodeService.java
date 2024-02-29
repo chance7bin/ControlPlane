@@ -3,6 +3,7 @@ package com.example.controlplane.service;
 import com.alibaba.fastjson2.JSONObject;
 import com.example.controlplane.entity.bo.Server;
 import com.example.controlplane.entity.dto.FindDTO;
+import com.example.controlplane.entity.dto.LabelDTO;
 import com.example.controlplane.entity.dto.page.PageInfo;
 import com.example.controlplane.entity.po.Node;
 
@@ -20,8 +21,13 @@ public interface INodeService {
 
     Server getRemoteNodeStatus(String ip);
 
-    void updateNode();
+    void updateRemoteNode();
 
 
     PageInfo<Node> getNodeList(FindDTO findDTO);
+
+    void updateLabel(LabelDTO labelDTO);
+
+
+    Node getNodeById(String id);
 }

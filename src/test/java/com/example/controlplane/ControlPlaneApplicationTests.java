@@ -10,4 +10,10 @@ class ControlPlaneApplicationTests {
     void contextLoads() {
     }
 
+    @Test
+    void downloadFile() {
+
+
+    }
+
 }

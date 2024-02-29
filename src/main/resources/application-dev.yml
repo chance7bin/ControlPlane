@@ -2,3 +2,8 @@ spring:
   data:
     mongodb:
       uri: mongodb://localhost:27017/ControlPlane
+
+# 文件配置
+file:
+  # 文件存储路径
+  save-path: E:/control-plane/file

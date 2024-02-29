@@ -1,7 +1,9 @@
 package com.example.controlplane.service;
 
+import com.example.controlplane.entity.dto.DeployDTO;
 import com.example.controlplane.entity.dto.FindDTO;
-import com.example.controlplane.entity.dto.JsonResult;
+import com.example.controlplane.entity.dto.MigrateDTO;
+import com.example.controlplane.entity.dto.PortalResponse;
 
 /**
  * 模型接口
@@ -11,6 +13,10 @@ import com.example.controlplane.entity.dto.JsonResult;
  */
 public interface IModelService {
 
-    JsonResult getModelList(FindDTO findDTO);
+    PortalResponse getModelList(FindDTO findDTO);
+
+    void deployModel(DeployDTO deployDTO);
+
+    void migrateModel(MigrateDTO migrateDTO);
 
 }

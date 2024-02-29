@@ -12,5 +12,8 @@ public class PageInfo<T> extends PageSerializable<T> {
         super(page);
     }
 
+    public static <T> PageInfo<T> of(Page<? extends T> page) {
+        return new PageInfo<>(page);
+    }
 
 }

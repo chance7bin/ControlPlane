@@ -1,7 +1,7 @@
 package com.example.controlplane.clients;
 
 import com.example.controlplane.entity.dto.FindDTO;
-import com.example.controlplane.entity.dto.JsonResult;
+import com.example.controlplane.entity.dto.PortalResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -21,9 +21,9 @@ public class PortalClient {
     @Autowired
     RemoteApiClient remoteApiClient;
 
-    public JsonResult getDeployModel(FindDTO findDTO) {
+    public PortalResponse getDeployModel(FindDTO findDTO) {
         DynamicUrlInterceptor.setDynamicUrl(portalUrl);
-        JsonResult list = remoteApiClient.getDeployedModel(findDTO);
+        PortalResponse list = remoteApiClient.getDeployedModel(findDTO);
         return list;
     }
 

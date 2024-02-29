@@ -1,5 +1,6 @@
 package com.example.controlplane.entity.bo;
 
+import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 /**
@@ -18,6 +19,7 @@ public class Label {
     /**
      * 是否可编辑
      */
+    @ApiModelProperty(value = "是否可编辑（非空且为False才不可编辑）")
     Boolean editable;
 
 }

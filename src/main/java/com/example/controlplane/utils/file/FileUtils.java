@@ -2,6 +2,7 @@ package com.example.controlplane.utils.file;
 
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.ZipUtil;
+import com.example.controlplane.exception.UtilException;
 import com.example.controlplane.utils.DateUtils;
 import com.example.controlplane.utils.StringUtils;
 import com.example.controlplane.utils.uuid.IdUtils;
@@ -510,6 +511,29 @@ public class FileUtils extends org.apache.commons.io.FileUtils
         return new CommonsMultipartFile(item);
     }
 
+    /**
+     * MultipartFile类型文件转成File
+     * @param file 待转换文件
+     * @param path 文件路径
+     * @return {@link File} 转换后的文件
+     * @throws IOException IO异常
+     */
+    public static File multipartFile2File(MultipartFile file, String path){
+        File toFile = new File(path);
+
+        // 如果该存储路径不存在则新建存储路径
+        if (!toFile.getParentFile().exists()) {
+            toFile.getParentFile().mkdirs();
+        }
+
+        // 文件写入
+        try {
+            file.transferTo(toFile);
+        } catch (IOException e) {
+            throw new UtilException("文件写入异常", e);
+        }
+        return toFile;
+    }
 
 
     /**
