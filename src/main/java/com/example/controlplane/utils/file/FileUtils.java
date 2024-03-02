@@ -369,23 +369,53 @@ public class FileUtils extends org.apache.commons.io.FileUtils
         long gb = mb * 1024;
         if (size >= gb)
         {
-            return String.format("%.1f GB", (float) size / gb);
+            // return String.format("%.1f GB", (float) size / gb);
+            return String.format("%.0fGB", (float) size / gb);
         }
         else if (size >= mb)
         {
             float f = (float) size / mb;
-            return String.format(f > 100 ? "%.0f MB" : "%.1f MB", f);
+            // return String.format(f > 100 ? "%.0f MB" : "%.1f MB", f);
+            return String.format("%.0fMB", f);
         }
         else if (size >= kb)
         {
             float f = (float) size / kb;
-            return String.format(f > 100 ? "%.0f KB" : "%.1f KB", f);
+            // return String.format(f > 100 ? "%.0f KB" : "%.1f KB", f);
+            return String.format("%.0fKB", f);
         }
         else
         {
-            return String.format("%d B", size);
+            // return String.format("%d B", size);
+            return String.format("%dB", size);
         }
     }
+
+    // 文件大小字符串比较 GB MB KB B
+    public static int compare(String size1, String size2){
+        long s1 = 0;
+        long s2 = 0;
+        if (size1.contains("GB")){
+            s1 = Long.parseLong(size1.replace("GB", "")) * 1024 * 1024 * 1024;
+        } else if (size1.contains("MB")){
+            s1 = Long.parseLong(size1.replace("MB", "")) * 1024 * 1024;
+        } else if (size1.contains("KB")){
+            s1 = Long.parseLong(size1.replace("KB", "")) * 1024;
+        } else if (size1.contains("B")){
+            s1 = Long.parseLong(size1.replace("B", ""));
+        }
+        if (size2.contains("GB")){
+            s2 = Long.parseLong(size2.replace("GB", "")) * 1024 * 1024 * 1024;
+        } else if (size2.contains("MB")){
+            s2 = Long.parseLong(size2.replace("MB", "")) * 1024 * 1024;
+        } else if (size2.contains("KB")){
+            s2 = Long.parseLong(size2.replace("KB", "")) * 1024;
+        } else if (size2.contains("B")){
+            s2 = Long.parseLong(size2.replace("B", ""));
+        }
+        return Long.compare(s1, s2);
+    }
+
 
 
 

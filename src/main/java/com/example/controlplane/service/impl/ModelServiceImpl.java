@@ -4,17 +4,26 @@ import com.alibaba.fastjson2.JSONObject;
 import com.example.controlplane.clients.NodeClient;
 import com.example.controlplane.clients.PortalClient;
 import com.example.controlplane.constant.DeployStatus;
+import com.example.controlplane.constant.NodeConstants;
 import com.example.controlplane.dao.DeployInfoDao;
+import com.example.controlplane.dao.NodeDao;
 import com.example.controlplane.dao.UpdateDao;
+import com.example.controlplane.entity.bo.envconfg.ModelEnv;
+import com.example.controlplane.entity.bo.envconfg.Selector;
 import com.example.controlplane.entity.dto.*;
 import com.example.controlplane.entity.po.DeployInfo;
 import com.example.controlplane.entity.po.FileInfo;
+import com.example.controlplane.entity.po.Node;
 import com.example.controlplane.exception.ServiceException;
 import com.example.controlplane.manager.ThreadPoolManager;
 import com.example.controlplane.service.IFileService;
 import com.example.controlplane.service.IModelService;
+import com.example.controlplane.service.INodeService;
+import com.example.controlplane.service.ITaskServerService;
 import com.example.controlplane.utils.Threads;
+import com.example.controlplane.utils.XMLUtils;
 import com.example.controlplane.utils.file.FileUtils;
+import com.example.controlplane.utils.spring.SpringUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -57,6 +66,12 @@ public class ModelServiceImpl implements IModelService {
 
     @Value("${file.save-path}")
     String savePath;
+
+    @Autowired
+    NodeDao nodeDao;
+
+    @Autowired
+    ITaskServerService taskServerService;
 
     private static final String PKG_PATH = "/packages";
 
@@ -224,6 +239,52 @@ public class ModelServiceImpl implements IModelService {
 
     }
 
+    @Override
+    public ModelEnv getModelEnvConfig(String pid) {
+        // 下载模型环境配置文件
+        String dest = savePath + "/tmp/envconfig_" + pid + ".xml";
+        nodeClient.downloadModelEnvConfig("localhost", nodePort, pid, dest);
+        // 解析环境配置xml
+        ModelEnv modelEnv = (ModelEnv) XMLUtils.convertXmlFileToObject(ModelEnv.class, dest);
+
+        if (modelEnv == null) {
+            throw new ServiceException("parse model env config failed");
+        }
+
+        return modelEnv;
+    }
+
+    @Override
+    public List<Node> getAvailableNodes(String pid) {
+
+        // 根据pid获取模型环境描述文档信息中的计算资源标签规则描述
+        Selector selector = getModelEnvConfig(pid).getSelector();
+
+        // 更新集群节点信息
+        // 获取INodeService的bean并调用其方法
+        INodeService ns = SpringUtils.getBean(INodeService.class);
+        // ns.updateRemoteNode();
+
+        // 获取在线节点
+        List<Node> availableNodes = nodeDao.findAllByStatus(NodeConstants.ONLINE);
+
+        // 排除已部署模型的节点
+        List<String> deployedNodes = taskServerService.getDeployedNodeByPid(pid);
+        for (String dn : deployedNodes) {
+            availableNodes.removeIf(on -> on.getIp().equals(dn));
+        }
+
+        // 根据Required过滤节点
+        availableNodes = SelectorUtils.filter(selector.getRequired(), availableNodes);
+
+        // 根据Preference排序节点
+        availableNodes = SelectorUtils.sort(selector.getPreferences(), availableNodes);
+
+        return availableNodes;
+    }
+
+
+
 
     /**
      * 获取部署包
@@ -244,5 +305,7 @@ public class ModelServiceImpl implements IModelService {
         FileUtils.delete(tmpPath);
         return fileId;
     }
+
+
 
 }

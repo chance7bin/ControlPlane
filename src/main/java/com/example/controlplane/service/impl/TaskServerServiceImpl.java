@@ -1,11 +1,15 @@
 package com.example.controlplane.service.impl;
 
 import com.alibaba.fastjson2.JSONObject;
+import com.example.controlplane.clients.DynamicUrlInterceptor;
+import com.example.controlplane.clients.RemoteApiClient;
 import com.example.controlplane.service.ITaskServerService;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -23,6 +27,11 @@ public class TaskServerServiceImpl implements ITaskServerService {
     @Resource(name="serverCollection")
     MongoCollection<Document> serverCollection;
 
+    @Autowired
+    RemoteApiClient remoteApiClient;
+
+    @Value("${taskserver.url}")
+    private String taskServerUrl;
 
     @Override
     public List<JSONObject> getServerList() {
@@ -40,5 +49,16 @@ public class TaskServerServiceImpl implements ITaskServerService {
         }
 
         return list;
+    }
+
+
+    public List<String> getDeployedNodeByPid(String pid){
+        DynamicUrlInterceptor.setDynamicUrl(taskServerUrl);
+        String rsp = remoteApiClient.getDeployedNodeByPid(pid);
+        JSONObject jsonObject = JSONObject.parseObject(rsp);
+        if(jsonObject.getInteger("code") == 1){
+            return jsonObject.getJSONArray("data").toList(String.class);
+        }
+        return null;
     }
 }

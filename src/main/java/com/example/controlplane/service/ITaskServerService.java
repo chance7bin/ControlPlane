@@ -14,4 +14,6 @@ public interface ITaskServerService {
 
     List<JSONObject> getServerList();
 
+    List<String> getDeployedNodeByPid(String pid);
+
 }

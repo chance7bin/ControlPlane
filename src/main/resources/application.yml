@@ -42,5 +42,13 @@ feign:
 # 门户地址
 portalUrl: http://localhost:7777
 #portalUrl: https://geomodeling.njnu.edu.cn
+
 # 节点端口
 nodePort: 8060
+
+# 任务服务器
+taskserver:
+  url: http://172.21.213.105:8061
+#  url: http://localhost:8061
+
+

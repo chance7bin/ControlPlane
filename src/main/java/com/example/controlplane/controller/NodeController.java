@@ -69,4 +69,11 @@ public class NodeController {
     }
 
 
+    @ApiOperation("根据部署包md5获取可用的节点信息")
+    @GetMapping("/available/{md5}")
+    public ApiResponse getAvailableNode(@PathVariable("md5") String md5) {
+        // return ApiResponse.success(nodeService.getAvailableNode(md5));
+        return null;
+    }
+
 }

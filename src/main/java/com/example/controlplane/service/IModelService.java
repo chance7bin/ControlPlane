@@ -1,9 +1,13 @@
 package com.example.controlplane.service;
 
+import com.example.controlplane.entity.bo.envconfg.ModelEnv;
 import com.example.controlplane.entity.dto.DeployDTO;
 import com.example.controlplane.entity.dto.FindDTO;
 import com.example.controlplane.entity.dto.MigrateDTO;
 import com.example.controlplane.entity.dto.PortalResponse;
+import com.example.controlplane.entity.po.Node;
+
+import java.util.List;
 
 /**
  * 模型接口
@@ -19,4 +23,7 @@ public interface IModelService {
 
     void migrateModel(MigrateDTO migrateDTO);
 
+    ModelEnv getModelEnvConfig(String pid);
+
+    List<Node> getAvailableNodes(String pid);
 }

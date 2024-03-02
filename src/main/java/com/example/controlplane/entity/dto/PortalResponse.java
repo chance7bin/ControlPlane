@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * 门户接口返回格式
@@ -22,4 +23,12 @@ public class PortalResponse<T> implements Serializable {
     private Integer code=0;
     private String msg="success";
     private T data;
+
+    private final static Integer SUC_CODE = 0;
+
+    public static boolean isSuccess(PortalResponse rsp){
+        return rsp != null && Objects.equals(rsp.getCode(), SUC_CODE);
+    }
+
+
 }

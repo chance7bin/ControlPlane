@@ -6,6 +6,7 @@ import com.example.controlplane.entity.dto.NodeResponse;
 import com.example.controlplane.exception.ServiceException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -21,6 +22,9 @@ public class NodeClient {
 
     @Autowired
     private RemoteApiClient remoteApiClient;
+
+    @Value("${file.save-path}")
+    private String savePath;
 
     /**
      * 获取远程节点状态
@@ -76,7 +80,7 @@ public class NodeClient {
     public NodeResponse deployModel(String ip, String port, MultipartFile file) {
         String dynamicUrl = "http://" + ip + ":" + port;
 
-        NodeResponse rsp = null;
+        NodeResponse rsp = new NodeResponse();
         try {
             DynamicUrlInterceptor.setDynamicUrl(dynamicUrl);
             String rspStr = remoteApiClient.deployModel(file);
@@ -92,7 +96,7 @@ public class NodeClient {
 
     public NodeResponse getModelServiceInfoByPid(String ip, String port, String pid) {
         String dynamicUrl = "http://" + ip + ":" + port;
-        NodeResponse rsp = null;
+        NodeResponse rsp = new NodeResponse();
         try {
             DynamicUrlInterceptor.setDynamicUrl(dynamicUrl);
             String rspStr = remoteApiClient.getModelByPid(pid);
@@ -104,14 +108,34 @@ public class NodeClient {
         return rsp;
     }
 
+    public Boolean checkDeployed(String ip, String port, String pid) {
+        String dynamicUrl = "http://" + ip + ":" + port;
+        NodeResponse rsp = new NodeResponse();
+        try {
+            DynamicUrlInterceptor.setDynamicUrl(dynamicUrl);
+            String rspStr = remoteApiClient.checkDeployed(pid);
+            rsp = NodeResponse.parse(rspStr);
+        } catch (Exception e) {
+            throw new ServiceException("获取模型服务信息异常: " + e.getMessage());
+        }
+
+        return rsp.getData().getBoolean("isDeployed");
+    }
+
+
     public void ping(String ip, String port) {
         String dynamicUrl = "http://" + ip + ":" + port;
         try {
             DynamicUrlInterceptor.setDynamicUrl(dynamicUrl);
-            remoteApiClient.ping();
+            remoteApiClient.pingNode();
         } catch (Exception e) {
             throw new ServiceException("ping 节点异常: " + e.getMessage());
         }
+    }
+
+    public void downloadModelEnvConfig(String ip, String port, String pid, String dest) {
+        String downloadUrl = "http://" + ip + ":" + port + "/modelser/envconfig/" + pid;
+        HttpUtil.downloadFile(downloadUrl, dest);
     }
 
 

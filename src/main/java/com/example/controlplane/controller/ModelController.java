@@ -1,18 +1,19 @@
 package com.example.controlplane.controller;
 
 import com.example.controlplane.entity.dto.*;
+import com.example.controlplane.entity.po.Node;
 import com.example.controlplane.service.IModelService;
 import com.example.controlplane.utils.file.FileUtils;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 模型资源接口
@@ -33,7 +34,7 @@ public class ModelController {
     @PostMapping("/list")
     public ApiResponse getModelList(@RequestBody FindDTO findDTO) {
         PortalResponse res = modelService.getModelList(findDTO);
-        if (res.getCode() != 0) {
+        if (!PortalResponse.isSuccess(res)) {
             return ApiResponse.error(res.getMsg());
         }
         return ApiResponse.success(res.getData());
@@ -53,6 +54,22 @@ public class ModelController {
     public ApiResponse migrateModel(@RequestBody MigrateDTO migrateDTO) {
         modelService.migrateModel(migrateDTO);
         return ApiResponse.success();
+    }
+
+    @ApiOperation("获取模型环境配置信息")
+    @GetMapping("/envconfig/{pid}")
+    public ApiResponse getModelEnvConfig(@PathVariable("pid") String pid) {
+        return ApiResponse.success(modelService.getModelEnvConfig(pid));
+    }
+
+    @ApiOperation("获取候选目标节点集合")
+    @GetMapping("/nodes/available/{pid}")
+    public ApiResponse getAvailableNodes(@PathVariable("pid") String pid) {
+
+        List<Node> availableNodes = modelService.getAvailableNodes(pid);
+        List<String> nodeIpList = availableNodes == null ? new ArrayList<>() : availableNodes.stream().map(Node::getIp).collect(Collectors.toList());
+        return ApiResponse.success(nodeIpList);
+
     }
 
 }
