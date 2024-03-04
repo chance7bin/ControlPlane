@@ -1,6 +1,8 @@
 package com.example.controlplane.entity.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -11,6 +13,8 @@ import java.util.List;
  * @author 7bin
  * @date 2024/02/28
  */
+@NoArgsConstructor
+@AllArgsConstructor
 @Data
 public class DeployDTO {
 

@@ -6,7 +6,7 @@ package com.example.controlplane.constant;
  * @author 7bin
  * @date 2024/03/01
  */
-public class Policy {
+public class PolicyMode {
 
     public final static String EXACTLY = "exactly";
 

@@ -2,6 +2,7 @@ package com.example.controlplane.service.impl;
 
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
+import com.example.controlplane.clients.EngineClient;
 import com.example.controlplane.clients.NodeClient;
 import com.example.controlplane.constant.NodeConstants;
 import com.example.controlplane.dao.NodeDao;
@@ -24,6 +25,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.TimerTask;
 
@@ -47,6 +49,8 @@ public class NodeServiceImpl implements INodeService {
     @Value("${nodePort}")
     private String nodePort;
 
+    @Autowired
+    EngineClient engineClient;
 
     @Override
     public List<JSONObject> getTaskNodeList() {
@@ -82,10 +86,12 @@ public class NodeServiceImpl implements INodeService {
                         try {
                             Server server = getRemoteNodeStatus(ip);
                             Node node1 = getNodeByIp(ip);
+                            server.setDeployDocker(engineClient.checkDocker(ip));
                             if (node1 != null) {
                                 node1.setStatus(NodeConstants.ONLINE);
                                 node1.setServer(server);
                                 updateNodeLabelsByServer(node1, server);
+                                node1.setUpdateTime(new Date());
                                 nodeDao.save(node1);
                             } else {
                                 Node node2 = new Node();
@@ -158,6 +164,7 @@ public class NodeServiceImpl implements INodeService {
 
 
         node.setLabels(oldLabels);
+        node.setUpdateTime(new Date());
         nodeDao.save(node);
     }
 
@@ -204,6 +211,7 @@ public class NodeServiceImpl implements INodeService {
         Node node1 = getNodeByIp(ip);
         if (node1 != null) {
             node1.setStatus(NodeConstants.OFFLINE);
+            node1.setUpdateTime(new Date());
             nodeDao.save(node1);
         } else {
             Node node2 = new Node();

@@ -30,7 +30,7 @@ public class TaskServerServiceImpl implements ITaskServerService {
     @Autowired
     RemoteApiClient remoteApiClient;
 
-    @Value("${taskserver.url}")
+    @Value("${taskServerUrl}")
     private String taskServerUrl;
 
     @Override

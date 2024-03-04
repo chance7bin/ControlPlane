@@ -271,7 +271,7 @@ public class IpUtils {
     }
 
     public static void main(String[] args) {
-        System.out.println(getMacAddress("172.21.212.177"));
+        getMacAddress("223.2.43.76");
     }
 
 

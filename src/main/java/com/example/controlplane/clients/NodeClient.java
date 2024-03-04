@@ -1,6 +1,7 @@
 package com.example.controlplane.clients;
 
 import cn.hutool.http.HttpUtil;
+import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import com.example.controlplane.entity.dto.NodeResponse;
 import com.example.controlplane.exception.ServiceException;
@@ -26,6 +27,7 @@ public class NodeClient {
     @Value("${file.save-path}")
     private String savePath;
 
+
     /**
      * 获取远程节点状态
      *
@@ -36,9 +38,9 @@ public class NodeClient {
     public JSONObject getRemoteNodeStatus(String ip, String port) {
 
         String dynamicUrl = "http://" + ip + ":" + port;
-        // 设置 FeignClient 的 url 属性为动态获取的 IP 地址
-        JSONObject rsp = null;
+        JSONObject rsp;
         try {
+            // 设置 FeignClient 的 url 属性为动态获取的 IP 地址
             DynamicUrlInterceptor.setDynamicUrl(dynamicUrl);
             // 调用远程接口
             String rspStr = remoteApiClient.getRemoteNodeStatus();
@@ -75,51 +77,65 @@ public class NodeClient {
      * @param ip   计算节点 IP
      * @param port 计算节点端口
      * @param file 模型部署包
-     * @return 部署结果
+     * @return 部署成功的模型服务信息
      */
-    public NodeResponse deployModel(String ip, String port, MultipartFile file) {
+    public JSONObject deployModel(String ip, String port, MultipartFile file) {
         String dynamicUrl = "http://" + ip + ":" + port;
 
-        NodeResponse rsp = new NodeResponse();
+        NodeResponse rsp;
         try {
             DynamicUrlInterceptor.setDynamicUrl(dynamicUrl);
             String rspStr = remoteApiClient.deployModel(file);
-            rsp = NodeResponse.parse(rspStr);
+            rsp = NodeResponse.parseAndJudge(rspStr);
         } catch (Exception e) {
             // log.error(e.toString());
             throw new ServiceException("部署模型异常: " + e.getMessage());
         }
 
-        return rsp;
+        return (JSONObject) rsp.getData();
     }
 
 
-    public NodeResponse getModelServiceInfoByPid(String ip, String port, String pid) {
+    public JSONArray getModelServiceInfoByPid(String ip, String port, String pid) {
         String dynamicUrl = "http://" + ip + ":" + port;
-        NodeResponse rsp = new NodeResponse();
+        NodeResponse rsp;
         try {
             DynamicUrlInterceptor.setDynamicUrl(dynamicUrl);
             String rspStr = remoteApiClient.getModelByPid(pid);
-            rsp = NodeResponse.parse(rspStr);
+            rsp = NodeResponse.parseAndJudge(rspStr);
         } catch (Exception e) {
             throw new ServiceException("获取模型服务信息异常: " + e.getMessage());
         }
 
-        return rsp;
+        return (JSONArray) rsp.getData();
+    }
+
+    public JSONObject getModelServiceInfoByMsid(String ip, String port, String msid) {
+        String dynamicUrl = "http://" + ip + ":" + port;
+        NodeResponse rsp;
+        try {
+            DynamicUrlInterceptor.setDynamicUrl(dynamicUrl);
+            String rspStr = remoteApiClient.getModelByMsid(msid);
+            rsp = NodeResponse.parseAndJudge(rspStr);
+        } catch (Exception e) {
+            throw new ServiceException("获取模型服务信息异常: " + e.getMessage());
+        }
+
+        return (JSONObject) rsp.getData();
     }
 
     public Boolean checkDeployed(String ip, String port, String pid) {
         String dynamicUrl = "http://" + ip + ":" + port;
-        NodeResponse rsp = new NodeResponse();
+        NodeResponse rsp;
         try {
             DynamicUrlInterceptor.setDynamicUrl(dynamicUrl);
             String rspStr = remoteApiClient.checkDeployed(pid);
-            rsp = NodeResponse.parse(rspStr);
+            rsp = NodeResponse.parseAndJudge(rspStr);
         } catch (Exception e) {
             throw new ServiceException("获取模型服务信息异常: " + e.getMessage());
         }
 
-        return rsp.getData().getBoolean("isDeployed");
+        return (Boolean) rsp.getData();
     }
 
 
@@ -133,6 +149,14 @@ public class NodeClient {
         }
     }
 
+    /**
+     * 下载模型环境配置文档
+     *
+     * @param ip   计算节点 IP
+     * @param port 计算节点端口
+     * @param pid  模型部署包 ID
+     * @param dest 下载文件保存路径
+     */
     public void downloadModelEnvConfig(String ip, String port, String pid, String dest) {
         String downloadUrl = "http://" + ip + ":" + port + "/modelser/envconfig/" + pid;
         HttpUtil.downloadFile(downloadUrl, dest);
@@ -150,6 +174,27 @@ public class NodeClient {
     public void downloadPackage(String ip, String port, String pid, String dest) {
         String downloadUrl = "http://" + ip + ":" + port + "/modelser/downloadPackage/" + pid;
         HttpUtil.downloadFile(downloadUrl, dest);
+    }
+
+
+    public JSONObject updateModelService(String ip, String port, String msid, String ac) {
+        String dynamicUrl = "http://" + ip + ":" + port;
+        try {
+            DynamicUrlInterceptor.setDynamicUrl(dynamicUrl);
+            String rspStr = remoteApiClient.updateModelService(msid, ac);
+            NodeResponse rsp = NodeResponse.parseAndJudge(rspStr);
+            return (JSONObject) rsp.getData();
+        } catch (Exception e) {
+            throw new ServiceException("更新模型信息异常: " + e.getMessage());
+        }
+    }
+
+    public JSONObject startModelService(String ip, String port, String msid) {
+        return updateModelService(ip, port, msid, "start");
+    }
+
+    public JSONObject stopModelService(String ip, String port, String msid) {
+        return updateModelService(ip, port, msid, "stop");
     }
 
 }

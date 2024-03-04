@@ -1,12 +1,16 @@
 package com.example.controlplane.controller;
 
 import com.example.controlplane.entity.dto.*;
+import com.example.controlplane.entity.dto.page.PageInfo;
+import com.example.controlplane.entity.po.DeployInfo;
 import com.example.controlplane.entity.po.Node;
+import com.example.controlplane.exception.ServiceException;
 import com.example.controlplane.service.IModelService;
 import com.example.controlplane.utils.file.FileUtils;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -51,7 +55,7 @@ public class ModelController {
 
     @ApiOperation("迁移模型")
     @PostMapping("/migrate")
-    public ApiResponse migrateModel(@RequestBody MigrateDTO migrateDTO) {
+    public ApiResponse migrateModel(@Validated @RequestBody MigrateDTO migrateDTO) {
         modelService.migrateModel(migrateDTO);
         return ApiResponse.success();
     }
@@ -70,6 +74,27 @@ public class ModelController {
         List<String> nodeIpList = availableNodes == null ? new ArrayList<>() : availableNodes.stream().map(Node::getIp).collect(Collectors.toList());
         return ApiResponse.success(nodeIpList);
 
+    }
+
+
+    @ApiOperation("容错策略配置")
+    @PostMapping("/ha/config")
+    public ApiResponse configHa(@Validated @RequestBody PolicyDTO policyDTO) {
+
+        if (policyDTO.getModelMd5() == null && policyDTO.getFile() == null) {
+            throw new ServiceException("file和md5两者必须有其一!");
+        }
+
+        modelService.configHa(policyDTO);
+        return ApiResponse.success();
+    }
+
+
+    @ApiOperation("模型部署信息列表")
+    @PostMapping("/deploy/list")
+    public ApiResponse getDeployList(@RequestBody FindDTO findDTO) {
+        PageInfo<DeployInfo> res = modelService.getDeployList(findDTO);
+        return ApiResponse.success(res);
     }
 
 }

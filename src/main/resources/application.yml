@@ -46,9 +46,11 @@ portalUrl: http://localhost:7777
 # 节点端口
 nodePort: 8060
 
+# 容器引擎端口
+enginePort: 8808
+
 # 任务服务器
-taskserver:
-  url: http://172.21.213.105:8061
-#  url: http://localhost:8061
+taskServerUrl: http://172.21.213.105:8061
+#  taskServerUrl: http://localhost:8061
 
 

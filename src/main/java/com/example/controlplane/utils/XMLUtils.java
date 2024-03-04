@@ -99,11 +99,11 @@ public class XMLUtils {
             try {
                 fr = new FileReader(xmlPath);
             } catch (FileNotFoundException e) {
-                e.printStackTrace();
+                // e.printStackTrace();
             }
             xmlObject = unmarshaller.unmarshal(fr);
         } catch (JAXBException e) {
-            e.printStackTrace();
+            // e.printStackTrace();
         }
         return xmlObject;
     }

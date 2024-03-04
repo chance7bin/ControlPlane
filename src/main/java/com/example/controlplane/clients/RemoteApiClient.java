@@ -15,7 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 @FeignClient(name = "remote-api", url = "dynamic-url")
 public interface RemoteApiClient {
 
-    // ========== 模型服务容器接口 ==========
+    // ================ 模型服务容器接口 ================
     /**
      * 获取远程节点状态
      *
@@ -39,8 +39,12 @@ public interface RemoteApiClient {
      * @param pid 模型部署包md5
      * @return 模型信息
      */
-    @GetMapping("/modelser/info/{pid}")
+    @GetMapping("/modelser/md5/{pid}")
     String getModelByPid(@PathVariable("pid") String pid);
+
+    // 根据模型msid获取模型信息
+    @GetMapping("/modelser/json/{msid}")
+    String getModelByMsid(@PathVariable("msid") String msid);
 
 
     /**
@@ -59,18 +63,21 @@ public interface RemoteApiClient {
     @GetMapping("/ping")
     String pingNode();
 
+
     /**
-     * 获取模型环境配置信息
+     * 更新模型信息
      *
-     * @param pid 模型部署包md5
-     * @return 模型环境配置
+     * @param msid 模型服务id
+     * @param ac  操作 stop: 停止服务 start: 开启服务
+     * @return 更新结果
      */
-    @GetMapping("/modelser/envconfig/{pid}")
-    String getModelEnvConfig(@PathVariable("pid") String pid);
+    @PutMapping("/modelser/{msid}")
+    String updateModelService(@PathVariable("msid") String msid, @RequestParam("ac") String ac);
 
 
 
-    // ========== 容器交互引擎接口 ==========
+
+    // ================ 容器交互引擎接口 ================
 
     /**
      * 获取容器交互引擎服务器信息
@@ -89,7 +96,7 @@ public interface RemoteApiClient {
     ApiResponse checkDocker();
 
 
-    // ========== 门户接口 ==========
+    // ================ 门户接口 ================
 
     /**
      * 获取门户中的模型列表

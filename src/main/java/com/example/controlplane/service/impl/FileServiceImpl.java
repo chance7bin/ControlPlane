@@ -33,6 +33,11 @@ public class FileServiceImpl implements IFileService {
 
     @Override
     public String uploadFiles(FileDTO fileDTO) {
+
+        if (fileDTO.getFile() == null) {
+            throw new ServiceException("MultipartFile is null");
+        }
+
         String path = savePath + fileDTO.getPath();
         File file = new File(path);
 

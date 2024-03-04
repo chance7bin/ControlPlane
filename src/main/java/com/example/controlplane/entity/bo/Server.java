@@ -35,4 +35,6 @@ public class Server {
 
     Integer usageDisk;
 
+    Boolean deployDocker;
+
 }

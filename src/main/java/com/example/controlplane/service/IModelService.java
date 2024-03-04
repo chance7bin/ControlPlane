@@ -1,10 +1,9 @@
 package com.example.controlplane.service;
 
 import com.example.controlplane.entity.bo.envconfg.ModelEnv;
-import com.example.controlplane.entity.dto.DeployDTO;
-import com.example.controlplane.entity.dto.FindDTO;
-import com.example.controlplane.entity.dto.MigrateDTO;
-import com.example.controlplane.entity.dto.PortalResponse;
+import com.example.controlplane.entity.dto.*;
+import com.example.controlplane.entity.dto.page.PageInfo;
+import com.example.controlplane.entity.po.DeployInfo;
 import com.example.controlplane.entity.po.Node;
 
 import java.util.List;
@@ -19,11 +18,22 @@ public interface IModelService {
 
     PortalResponse getModelList(FindDTO findDTO);
 
-    void deployModel(DeployDTO deployDTO);
+
+    /**
+     * 部署模型
+     *
+     * @param deployDTO
+     * @return 部署记录id
+     */
+    List<String> deployModel(DeployDTO deployDTO);
 
     void migrateModel(MigrateDTO migrateDTO);
 
     ModelEnv getModelEnvConfig(String pid);
 
     List<Node> getAvailableNodes(String pid);
+
+    void configHa(PolicyDTO policyDTO);
+
+    PageInfo<DeployInfo> getDeployList(FindDTO findDTO);
 }
