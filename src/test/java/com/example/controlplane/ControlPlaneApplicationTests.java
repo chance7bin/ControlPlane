@@ -43,7 +43,7 @@ class ControlPlaneApplicationTests {
 
     @Test
     void testGetModel(){
-        Boolean rsp = nodeClient.checkDeployed("localhost", "8060", "818daf6969e1d7472739677b81f3bd98");
+        Boolean rsp = nodeClient.checkDeployed("localhost" , "818daf6969e1d7472739677b81f3bd98");
         System.out.println(rsp);
     }
 

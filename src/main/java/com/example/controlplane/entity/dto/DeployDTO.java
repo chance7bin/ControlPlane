@@ -18,6 +18,11 @@ import java.util.List;
 @Data
 public class DeployDTO {
 
+    /**
+     * 必选，迁移模型名称
+     */
+    String modelName;
+
 
     /**
      * 必选，部署模型的容器ID

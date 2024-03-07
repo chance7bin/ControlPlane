@@ -65,7 +65,7 @@ public class NodeServiceImpl implements INodeService {
     }
 
     public Server getRemoteNodeStatus(String ip) {
-        JSONObject obj = nodeClient.getRemoteNodeStatus(ip, nodePort);
+        JSONObject obj = nodeClient.getRemoteNodeStatus(ip);
         Server server = formatServerInfo(obj);
         return server;
     }
@@ -182,6 +182,9 @@ public class NodeServiceImpl implements INodeService {
         for (java.lang.reflect.Field field : server.getClass().getDeclaredFields()) {
             field.setAccessible(true);
             try {
+                if (field.get(server) == null) {
+                    continue;
+                }
                 // 有则更新，无则添加
                 boolean exist = false;
                 for (Label label : labels) {
@@ -235,6 +238,9 @@ public class NodeServiceImpl implements INodeService {
         server.setFreeMem(FileUtils.calcSize(freeMem));
         server.setUsageMem((int) ((totalMem - freeMem) * 100 / totalMem));
         server.setCpuNum(jsonObject.getJSONArray("cpus").size());
+        if (jsonObject.containsKey("cpuusage")) {
+            server.setCpuUsage(jsonObject.getDouble("cpuusage"));
+        }
         JSONArray disk = jsonObject.getJSONArray("disk");
         server.setProcessDisk(disk.getString(1));
         server.setUsageDisk(disk.getInteger(0));

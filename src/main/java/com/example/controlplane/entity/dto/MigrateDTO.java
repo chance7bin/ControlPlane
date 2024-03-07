@@ -20,6 +20,13 @@ public class MigrateDTO {
      */
     // String modelId;
 
+
+    /**
+     * 必选，模型名称
+     */
+    @NotBlank(message = "模型名称不能为空")
+    String modelName;
+
     /**
      * 必选，模型md5
      */

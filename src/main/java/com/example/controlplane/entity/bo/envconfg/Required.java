@@ -20,6 +20,6 @@ public class Required {
     MatchLabels matchLabels;
 
     @XmlElement(name = "MatchExpressions")
-    MatchExpressions MatchExpressions;
+    MatchExpressions matchExpressions;
 
 }

@@ -20,6 +20,6 @@ public class Preference {
     MatchLabels matchLabels;
 
     @XmlElement(name = "MatchExpressions")
-    MatchExpressions MatchExpressions;
+    MatchExpressions matchExpressions;
 
 }

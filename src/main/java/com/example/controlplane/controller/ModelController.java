@@ -10,6 +10,7 @@ import com.example.controlplane.utils.file.FileUtils;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -78,9 +79,18 @@ public class ModelController {
 
 
     @ApiOperation("容错策略配置")
-    @PostMapping("/ha/config")
-    public ApiResponse configHa(@Validated @RequestBody PolicyDTO policyDTO) {
-
+    @PostMapping(value = "/ha/config", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ApiResponse configHa(
+        @RequestParam(value = "modelName") String modelName,
+        @RequestParam(value = "file", required = false) MultipartFile file,
+        @RequestParam(value = "modelMd5", required = false) String modelMd5,
+        @RequestParam(value = "policyId", required = false) String policyId,
+        @RequestParam(value = "policyName", required = false) String policyName,
+        @RequestParam(value = "haMode") String haMode,
+        @RequestParam(value = "count", required = false) Integer count,
+        @RequestParam(value = "targetIp", required = false) List<String> targetIp
+    ) {
+        PolicyDTO policyDTO = new PolicyDTO(modelName, file, modelMd5, policyId, policyName, haMode, count, targetIp);
         if (policyDTO.getModelMd5() == null && policyDTO.getFile() == null) {
             throw new ServiceException("file和md5两者必须有其一!");
         }
@@ -95,6 +105,18 @@ public class ModelController {
     public ApiResponse getDeployList(@RequestBody FindDTO findDTO) {
         PageInfo<DeployInfo> res = modelService.getDeployList(findDTO);
         return ApiResponse.success(res);
+    }
+
+    @ApiOperation("容错托管模型")
+    @PostMapping("/ha/model/list")
+    public ApiResponse getHaModelList(@RequestBody FindDTO findDTO) {
+        return ApiResponse.success(modelService.getHaModelList(findDTO));
+    }
+
+    @ApiOperation("容错处理记录")
+    @PostMapping("/ha/record/list")
+    public ApiResponse getHaRecordList(@RequestBody FindDTO findDTO) {
+        return ApiResponse.success(modelService.getHaRecordList(findDTO));
     }
 
 }

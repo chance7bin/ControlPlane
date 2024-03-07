@@ -46,15 +46,12 @@ public class FileServiceImpl implements IFileService {
         // 获取文件名
         String fileName = fileDTO.getFile().getOriginalFilename();
         fileInfo.setFileName(fileName);
-        // 如果md5值为空则计算md5值
-        String md5 = StringUtils.isEmpty(fileDTO.getMd5()) ? SecureUtil.md5(file) : fileDTO.getMd5();
-        fileInfo.setMd5(md5);
         // fileInfo.setSize(String.valueOf(FileUtil.size(file)));
         fileInfo.setSize(String.valueOf(fileDTO.getFile().getSize()));
         fileInfo.setSuffix(FileTypeUtils.getFileType(fileName));
 
         // 判断文件是否已存在
-        FileInfo f = fileInfoDao.findFirstByMd5(md5);
+        FileInfo f = fileInfoDao.findFirstByMd5(fileDTO.getMd5());
         if (f != null) {
             fileInfo.setFilePath(f.getFilePath());
         } else {
@@ -75,6 +72,10 @@ public class FileServiceImpl implements IFileService {
                 // log.error("文件写入异常");
                 throw new ServiceException("文件写入异常");
             }
+
+            // 如果md5值为空则计算md5值
+            String md5 = StringUtils.isEmpty(fileDTO.getMd5()) ? SecureUtil.md5(file) : fileDTO.getMd5();
+            fileInfo.setMd5(md5);
 
             // 根据savePath截取文件路径
             String filePath = path.substring(savePath.length());

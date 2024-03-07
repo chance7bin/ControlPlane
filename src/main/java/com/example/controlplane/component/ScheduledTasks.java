@@ -18,15 +18,17 @@ public class ScheduledTasks {
 
     private static final int _5MINUTE = 5 * 60 * 1000;
 
+    private static final int _30MINUTE = 30 * 60 * 1000;
+
     private static final int _5SECOND = 5 * 1000;
 
     @Autowired
     INodeService nodeService;
 
-    @Scheduled(fixedRate = _5MINUTE) // 每隔5秒执行一次
+    @Scheduled(fixedRate = _30MINUTE) // 每隔5秒执行一次
     public void updateRemoteNode() {
         log.info("update remote node...");
-        // nodeService.updateRemoteNode();
+        nodeService.updateRemoteNode();
     }
 
 }

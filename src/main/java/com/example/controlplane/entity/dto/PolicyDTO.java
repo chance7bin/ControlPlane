@@ -1,9 +1,10 @@
 package com.example.controlplane.entity.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.validation.constraints.NotBlank;
 import java.util.List;
 
 /**
@@ -12,6 +13,8 @@ import java.util.List;
  * @author 7bin
  * @date 2024/03/01
  */
+@AllArgsConstructor
+@NoArgsConstructor
 @Data
 public class PolicyDTO {
 
@@ -19,7 +22,7 @@ public class PolicyDTO {
     /**
      * 必选，模型名称
      */
-    @NotBlank(message = "模型名称不能为空")
+    // @NotBlank(message = "模型名称不能为空")
     String modelName;
 
     /**
@@ -50,7 +53,7 @@ public class PolicyDTO {
      * 容错策略模式
      * @see com.example.controlplane.constant.PolicyMode
      */
-    @NotBlank(message = "容错模式不能为空")
+    // @NotBlank(message = "容错模式不能为空")
     String haMode;
 
     /**

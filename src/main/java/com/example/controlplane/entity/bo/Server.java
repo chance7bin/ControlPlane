@@ -27,6 +27,8 @@ public class Server {
 
     Integer cpuNum;
 
+    Double cpuUsage;
+
     String processDisk;
 
     String totalDisk;

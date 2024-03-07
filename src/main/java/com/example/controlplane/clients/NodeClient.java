@@ -24,20 +24,19 @@ public class NodeClient {
     @Autowired
     private RemoteApiClient remoteApiClient;
 
-    @Value("${file.save-path}")
-    private String savePath;
+    @Value("${nodePort}")
+    private String nodePort;
 
 
     /**
      * 获取远程节点状态
      *
      * @param ip   计算节点 IP
-     * @param port 计算节点端口
      * @return 节点状态
      */
-    public JSONObject getRemoteNodeStatus(String ip, String port) {
+    public JSONObject getRemoteNodeStatus(String ip) {
 
-        String dynamicUrl = "http://" + ip + ":" + port;
+        String dynamicUrl = "http://" + ip + ":" + nodePort;
         JSONObject rsp;
         try {
             // 设置 FeignClient 的 url 属性为动态获取的 IP 地址
@@ -75,12 +74,11 @@ public class NodeClient {
      * 部署模型
      *
      * @param ip   计算节点 IP
-     * @param port 计算节点端口
      * @param file 模型部署包
      * @return 部署成功的模型服务信息
      */
-    public JSONObject deployModel(String ip, String port, MultipartFile file) {
-        String dynamicUrl = "http://" + ip + ":" + port;
+    public JSONObject deployModel(String ip, MultipartFile file) {
+        String dynamicUrl = "http://" + ip + ":" + nodePort;
 
         NodeResponse rsp;
         try {
@@ -96,8 +94,8 @@ public class NodeClient {
     }
 
 
-    public JSONArray getModelServiceInfoByPid(String ip, String port, String pid) {
-        String dynamicUrl = "http://" + ip + ":" + port;
+    public JSONArray getModelServiceInfoByPid(String ip, String pid) {
+        String dynamicUrl = "http://" + ip + ":" + nodePort;
         NodeResponse rsp;
         try {
             DynamicUrlInterceptor.setDynamicUrl(dynamicUrl);
@@ -110,8 +108,8 @@ public class NodeClient {
         return (JSONArray) rsp.getData();
     }
 
-    public JSONObject getModelServiceInfoByMsid(String ip, String port, String msid) {
-        String dynamicUrl = "http://" + ip + ":" + port;
+    public JSONObject getModelServiceInfoByMsid(String ip, String msid) {
+        String dynamicUrl = "http://" + ip + ":" + nodePort;
         NodeResponse rsp;
         try {
             DynamicUrlInterceptor.setDynamicUrl(dynamicUrl);
@@ -124,8 +122,8 @@ public class NodeClient {
         return (JSONObject) rsp.getData();
     }
 
-    public Boolean checkDeployed(String ip, String port, String pid) {
-        String dynamicUrl = "http://" + ip + ":" + port;
+    public Boolean checkDeployed(String ip, String pid) {
+        String dynamicUrl = "http://" + ip + ":" + nodePort;
         NodeResponse rsp;
         try {
             DynamicUrlInterceptor.setDynamicUrl(dynamicUrl);
@@ -139,8 +137,8 @@ public class NodeClient {
     }
 
 
-    public void ping(String ip, String port) {
-        String dynamicUrl = "http://" + ip + ":" + port;
+    public void ping(String ip) {
+        String dynamicUrl = "http://" + ip + ":" + nodePort;
         try {
             DynamicUrlInterceptor.setDynamicUrl(dynamicUrl);
             remoteApiClient.pingNode();
@@ -153,12 +151,11 @@ public class NodeClient {
      * 下载模型环境配置文档
      *
      * @param ip   计算节点 IP
-     * @param port 计算节点端口
      * @param pid  模型部署包 ID
      * @param dest 下载文件保存路径
      */
-    public void downloadModelEnvConfig(String ip, String port, String pid, String dest) {
-        String downloadUrl = "http://" + ip + ":" + port + "/modelser/envconfig/" + pid;
+    public void downloadModelEnvConfig(String ip, String pid, String dest) {
+        String downloadUrl = "http://" + ip + ":" + nodePort + "/modelser/envconfig/" + pid;
         HttpUtil.downloadFile(downloadUrl, dest);
     }
 
@@ -167,18 +164,17 @@ public class NodeClient {
      * 下载模型部署包
      *
      * @param ip   计算节点 IP
-     * @param port 计算节点端口
      * @param pid  模型部署包 ID
      * @param dest 下载文件保存路径
      */
-    public void downloadPackage(String ip, String port, String pid, String dest) {
-        String downloadUrl = "http://" + ip + ":" + port + "/modelser/downloadPackage/" + pid;
+    public void downloadPackage(String ip, String pid, String dest) {
+        String downloadUrl = "http://" + ip + ":" + nodePort + "/modelser/downloadPackage/" + pid;
         HttpUtil.downloadFile(downloadUrl, dest);
     }
 
 
-    public JSONObject updateModelService(String ip, String port, String msid, String ac) {
-        String dynamicUrl = "http://" + ip + ":" + port;
+    public JSONObject updateModelService(String ip, String msid, String ac) {
+        String dynamicUrl = "http://" + ip + ":" + nodePort;
         try {
             DynamicUrlInterceptor.setDynamicUrl(dynamicUrl);
             String rspStr = remoteApiClient.updateModelService(msid, ac);
@@ -189,12 +185,12 @@ public class NodeClient {
         }
     }
 
-    public JSONObject startModelService(String ip, String port, String msid) {
-        return updateModelService(ip, port, msid, "start");
+    public JSONObject startModelService(String ip, String msid) {
+        return updateModelService(ip, msid, "start");
     }
 
-    public JSONObject stopModelService(String ip, String port, String msid) {
-        return updateModelService(ip, port, msid, "stop");
+    public JSONObject stopModelService(String ip, String msid) {
+        return updateModelService(ip, msid, "stop");
     }
 
 }

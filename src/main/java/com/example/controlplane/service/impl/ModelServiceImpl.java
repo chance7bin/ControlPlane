@@ -70,9 +70,6 @@ public class ModelServiceImpl implements IModelService {
     @Autowired
     HaRecordDao haRecordDao;
 
-    @Value("${nodePort}")
-    String nodePort;
-
     @Value("${file.save-path}")
     String savePath;
 
@@ -95,17 +92,30 @@ public class ModelServiceImpl implements IModelService {
     private FileInfo cacheFile(String md5, MultipartFile file) {
         FileInfo fileInfo = fileService.getFileByMd5(md5);
         if (fileInfo == null) {
-            FileDTO fileDTO = new FileDTO();
-            fileDTO.setPath(PKG_PATH + "/" + file.getOriginalFilename());
-            fileDTO.setFile(file);
-            fileDTO.setMd5(md5);
-            String fileId = fileService.uploadFiles(fileDTO);
-            fileInfo = fileService.getFileById(fileId);
+            if (file == null) {
+                List<String> deployed = taskServerService.getDeployedNodeByPid(md5);
+                if (deployed.size() == 0) {
+                    throw new ServiceException("not found model deploy package");
+                }
+                // 从部署了相同模型的节点获取模型部署包
+                String fileId = getDeployPackage(md5, deployed);
+                fileInfo = fileService.getFileById(fileId);
+            } else {
+                FileDTO fileDTO = new FileDTO();
+                fileDTO.setPath(PKG_PATH + "/" + file.getOriginalFilename());
+                fileDTO.setFile(file);
+                fileDTO.setMd5(md5);
+                String fileId = fileService.uploadFiles(fileDTO);
+                fileInfo = fileService.getFileById(fileId);
+            }
         }
         return fileInfo;
     }
 
     private FileInfo cacheFile(MultipartFile file){
+        if (file == null) {
+            throw new ServiceException("cacheFile: file is required");
+        }
         return cacheFile(null, file);
     }
 
@@ -124,6 +134,8 @@ public class ModelServiceImpl implements IModelService {
 
             DeployInfo deployInfo = new DeployInfo();
             deployInfo.setTargetIp(ip);
+            deployInfo.setModelMd5(deployDTO.getMd5());
+            deployInfo.setModelName(deployDTO.getModelName());
             deployInfoDao.insert(deployInfo);
             res.add(deployInfo.getId());
             TimerTask task = new TimerTask() {
@@ -135,10 +147,10 @@ public class ModelServiceImpl implements IModelService {
                     try {
 
                         // 先检查下节点是否可用
-                        nodeClient.ping(ip, nodePort);
+                        nodeClient.ping(ip);
 
                         // 检查节点是否已经部署过该模型
-                        JSONArray msList = nodeClient.getModelServiceInfoByPid(ip, nodePort, deployDTO.getMd5());
+                        JSONArray msList = nodeClient.getModelServiceInfoByPid(ip, deployDTO.getMd5());
                         JSONObject ms;
                         if (msList.size() > 0) {
                             // 开启服务
@@ -146,14 +158,14 @@ public class ModelServiceImpl implements IModelService {
                             ms = msList.getJSONObject(0);
                         } else {
                             // 部署模型
-                            ms = nodeClient.deployModel(ip, nodePort, mf);
+                            ms = nodeClient.deployModel(ip, mf);
                         }
                         // 更新模型信息
                         DeployInfo info = deployInfoDao.findFirstById(deployInfo.getId());
                         info.setStatus(DeployStatus.FINISHED);
                         // info.setModelId(data.getString("_id"));
-                        info.setModelName(ms.getJSONObject("ms_model").getString("m_name"));
-                        info.setModelMd5(ms.getJSONObject("ms_model").getString("p_id"));
+                        // info.setModelName(ms.getJSONObject("ms_model").getString("m_name"));
+                        // info.setModelMd5(ms.getJSONObject("ms_model").getString("p_id"));
                         info.setUpdateTime(new Date());
                         deployInfoDao.save(info);
                     } catch (Exception e) {
@@ -180,7 +192,7 @@ public class ModelServiceImpl implements IModelService {
             JSONObject ms = msList.getJSONObject(i);
             String msid = ms.getString("_id");
             try {
-                nodeClient.startModelService(ip, nodePort, msid);
+                nodeClient.startModelService(ip, msid);
             } catch (Exception e) {
                 log.error("start model service [{}] on [{}] failed: {}", msid, ip, e.getMessage());
             }
@@ -195,6 +207,7 @@ public class ModelServiceImpl implements IModelService {
         DeployDTO deployDTO = new DeployDTO();
         deployDTO.setTargetIp(migrateDTO.getTargetIp());
         deployDTO.setMd5(migrateDTO.getModelMd5());
+        deployDTO.setModelName(migrateDTO.getModelName());
 
         FileInfo file = fileService.getFileByMd5(migrateDTO.getModelMd5());
         if (file != null) {
@@ -207,71 +220,7 @@ public class ModelServiceImpl implements IModelService {
 
             List<String> deployedMSR = migrateDTO.getDeployedMSR();
 
-            if (deployedMSR == null || deployedMSR.size() == 0) {
-                throw new ServiceException("no deployed model service record");
-            }
-
-            // 可ping通节点
-            List<String> availableNode = new ArrayList<>();
-
-            // 使用CountDownLatch来等待所有节点都ping通
-            CountDownLatch countDownLatch = new CountDownLatch(deployedMSR.size());
-
-            for (String d : deployedMSR) {
-
-                // ip:port => ip port
-                String ip = d.split(":")[0];
-
-                TimerTask task = new TimerTask() {
-                    @Override
-                    public void run() {
-                        try {
-                            // 先ping下节点
-                            nodeClient.ping(ip, nodePort);
-                            availableNode.add(ip);
-                        } catch (Exception e) {
-                            // log.error("get deploy package from [{}] failed: {}", ip, e.getMessage());
-                            log.error(e.getMessage());
-                        } finally {
-                            countDownLatch.countDown();
-                        }
-                    }
-                };
-
-                ThreadPoolManager.instance().execute(task);
-
-                Threads.sleep(100);
-
-            }
-
-            try {
-
-                // 等待所有节点都测试完毕
-                countDownLatch.await();
-
-                if (availableNode.size() == 0) {
-                    throw new ServiceException("no available node can get deploy package");
-                }
-
-            } catch (InterruptedException e) {
-                log.error("ping interrupted: {}", e.getMessage());
-            }
-
-            // 从可用节点中获取部署包
-            String fileId = null;
-            for (String ip : availableNode) {
-                try {
-                    fileId = getDeployPackage(ip, migrateDTO.getModelMd5());
-                    if (fileId != null) {
-                        break;
-                    }
-                } catch (Exception e) {
-                    log.error("get deploy package from [{}] failed: {}", ip, e.getMessage());
-                }
-            }
-            if (fileId == null) {
-                throw new ServiceException("not found any deploy package");
-            }
+            String fileId = getDeployPackage(migrateDTO.getModelMd5(), deployedMSR);
 
             // 设置部署包
             FileInfo fileInfo = fileService.getFileById(fileId);
@@ -284,11 +233,82 @@ public class ModelServiceImpl implements IModelService {
 
     }
 
+    // 从部署了当前服务的任意节点获取模型部署包
+    private String getDeployPackage(String md5, List<String> deployedMSR) {
+
+        if (deployedMSR == null || deployedMSR.size() == 0) {
+            throw new ServiceException("no deployed model service record");
+        }
+
+        // 可ping通节点
+        List<String> availableNode = new ArrayList<>();
+
+        // 使用CountDownLatch来等待所有节点都ping通
+        CountDownLatch countDownLatch = new CountDownLatch(deployedMSR.size());
+
+        for (String d : deployedMSR) {
+
+            // ip:port => ip port
+            String ip = d.split(":")[0];
+
+            TimerTask task = new TimerTask() {
+                @Override
+                public void run() {
+                    try {
+                        // 先ping下节点
+                        nodeClient.ping(ip);
+                        availableNode.add(ip);
+                    } catch (Exception e) {
+                        // log.error("get deploy package from [{}] failed: {}", ip, e.getMessage());
+                        log.error(e.getMessage());
+                    } finally {
+                        countDownLatch.countDown();
+                    }
+                }
+            };
+
+            ThreadPoolManager.instance().execute(task);
+
+            Threads.sleep(100);
+
+        }
+
+        try {
+
+            // 等待所有节点都测试完毕
+            countDownLatch.await();
+
+            if (availableNode.size() == 0) {
+                throw new ServiceException("no available node can get deploy package");
+            }
+
+        } catch (InterruptedException e) {
+            log.error("ping interrupted: {}", e.getMessage());
+        }
+
+        // 从可用节点中获取部署包
+        String fileId = null;
+        for (String ip : availableNode) {
+            try {
+                fileId = getDeployPackage(ip, md5);
+                if (fileId != null) {
+                    break;
+                }
+            } catch (Exception e) {
+                log.error("get deploy package from [{}] failed: {}", ip, e.getMessage());
+            }
+        }
+        if (fileId == null) {
+            throw new ServiceException("not found any deploy package");
+        }
+        return fileId;
+    }
+
     @Override
     public ModelEnv getModelEnvConfig(String pid) {
         // 下载模型环境配置文件
         String dest = savePath + "/tmp/envconfig_" + pid + ".xml";
-        nodeClient.downloadModelEnvConfig("localhost", nodePort, pid, dest);
+        nodeClient.downloadModelEnvConfig("localhost", pid, dest);
         // 解析环境配置xml
         ModelEnv modelEnv = (ModelEnv) XMLUtils.convertXmlFileToObject(ModelEnv.class, dest);
 
@@ -316,7 +336,7 @@ public class ModelServiceImpl implements IModelService {
         ModelEnv config = getModelEnvConfig(pid);
 
         // 如果没有配置，返回所有在线节点
-        if (config == null) {
+        if (config == null || config.getSelector() == null) {
             return availableNodes;
         }
 
@@ -387,6 +407,27 @@ public class ModelServiceImpl implements IModelService {
         PageInfo<DeployInfo> res = PageInfo.of(page);
         return res;
 
+    }
+
+    @Override
+    public PageInfo<HaRecord> getHaRecordList(FindDTO findDTO) {
+        Page<HaRecord> page = haRecordDao.findAll(findDTO.getPageable());
+        PageInfo<HaRecord> res = PageInfo.of(page);
+        return res;
+    }
+
+    @Override
+    public PageInfo<Model> getHaModelList(FindDTO findDTO) {
+        Page<Model> page = modelDao.findAll(findDTO.getPageable());
+        PageInfo<Model> res = PageInfo.of(page);
+        List<Model> models = res.getList();
+        for (Model model : models) {
+            List<String> d = taskServerService.getDeployedNodeByPid(model.getMd5());
+            model.setDeployedNodes(d);
+            Policy p = policyDao.findFirstById(model.getPolicyId());
+            model.setPolicy(p);
+        }
+        return res;
     }
 
 
@@ -467,11 +508,11 @@ public class ModelServiceImpl implements IModelService {
         }
 
         // 部署模型
+        HaRecord haRecord = new HaRecord();
+        haRecord.setOriginIp(deployedList);
+        haRecord.setTargetIp(targetList);
         if (targetList.size() > 0) {
-            HaRecord haRecord = new HaRecord();
-            List<String> deployList = deployModel(new DeployDTO(targetList, null, modelMd5));
-            haRecord.setOriginIp(deployedList);
-            haRecord.setTargetIp(targetList);
+            List<String> deployList = deployModel(new DeployDTO(model.getName(), targetList, null, modelMd5));
             haRecord.setDeployId(deployList);
             haRecordDao.save(haRecord);
         }
@@ -482,15 +523,15 @@ public class ModelServiceImpl implements IModelService {
     private void offlineService(String ip, String md5) {
         // 看下这个ip能不能ping通
         try {
-            nodeClient.ping(ip, nodePort);
+            nodeClient.ping(ip);
 
             // ping的通的话再让部署于该节点的模型下线
-            JSONArray array = nodeClient.getModelServiceInfoByPid(ip, nodePort, md5);
+            JSONArray array = nodeClient.getModelServiceInfoByPid(ip, md5);
             for (int i = 0; i < array.size(); i++) {
                 JSONObject ms = array.getJSONObject(i);
                 String msid = ms.getString("_id");
                 try {
-                    nodeClient.stopModelService(ip, nodePort, msid);
+                    nodeClient.stopModelService(ip, msid);
                 } catch (Exception e) {
                     log.error("stop model service [{}] on [{}] failed: {}", msid, ip, e.getMessage());
                 }
@@ -552,7 +593,7 @@ public class ModelServiceImpl implements IModelService {
      */
     private String getDeployPackage(String ip, String md5) {
         String tmpPath = savePath + "/tmp/" + md5 + ".zip";
-        nodeClient.downloadPackage(ip, nodePort, md5, tmpPath);
+        nodeClient.downloadPackage(ip, md5, tmpPath);
         FileDTO fileDTO = new FileDTO();
         fileDTO.setPath(PKG_PATH + "/" + md5 + ".zip");
         fileDTO.setFile(FileUtils.file2MultipartFile(new File(tmpPath)));
