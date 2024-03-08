@@ -53,4 +53,7 @@ enginePort: 8808
 taskServerUrl: http://172.21.213.105:8061
 #  taskServerUrl: http://localhost:8061
 
+# 模型容器最低版本
+msMinVersion: 0.4.1
+
 

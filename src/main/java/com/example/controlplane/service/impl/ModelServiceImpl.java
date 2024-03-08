@@ -76,6 +76,8 @@ public class ModelServiceImpl implements IModelService {
     @Autowired
     NodeDao nodeDao;
 
+
+
     @Autowired
     ITaskServerService taskServerService;
 
@@ -89,7 +91,7 @@ public class ModelServiceImpl implements IModelService {
 
 
     // 缓存模型部署包
-    private FileInfo cacheFile(String md5, MultipartFile file) {
+    public FileInfo cacheFile(String md5, MultipartFile file) {
         FileInfo fileInfo = fileService.getFileByMd5(md5);
         if (fileInfo == null) {
             if (file == null) {
@@ -109,10 +111,21 @@ public class ModelServiceImpl implements IModelService {
                 fileInfo = fileService.getFileById(fileId);
             }
         }
+
+        // 临时解压模型部署包，缓存其中的模型环境配置文件
+        String tmpDir = savePath + "/tmp/" + fileInfo.getMd5();
+        try {
+            FileUtils.unzip(savePath + fileInfo.getFilePath(), tmpDir);
+            String envConfig = savePath + "/envconfig/" + fileInfo.getMd5() + ".xml";
+            FileUtils.copy(tmpDir + "/model/env_config.xml", envConfig);
+        } finally {
+            FileUtils.delete(tmpDir);
+        }
+
         return fileInfo;
     }
 
-    private FileInfo cacheFile(MultipartFile file){
+    public FileInfo cacheFile(MultipartFile file){
         if (file == null) {
             throw new ServiceException("cacheFile: file is required");
         }
@@ -306,19 +319,48 @@ public class ModelServiceImpl implements IModelService {
 
     @Override
     public ModelEnv getModelEnvConfig(String pid) {
-        // 下载模型环境配置文件
-        String dest = savePath + "/tmp/envconfig_" + pid + ".xml";
-        nodeClient.downloadModelEnvConfig("localhost", pid, dest);
+        // 模型环境配置文件位置
+        String dest = savePath + "/envconfig/" + pid + ".xml";
+
+        // 判断本地文件是否有对应的模型环境配置文件
+        if (!(new File(dest).exists())) {
+
+            // 从部署了相同模型的节点中获取模型环境配置文件
+            List<String> dn = taskServerService.getDeployedNodeByPid(pid);
+            if (dn.size() == 0) {
+                log.warn("not found model env config");
+                return null;
+            }
+
+
+            for (String n : dn) {
+                // 该接口支支持特定版本的模型容器
+                if (SpringUtils.getBean(INodeService.class).geVersion(n)) {
+                    if (SpringUtils.getBean(INodeService.class).geVersion(n)) {
+                        nodeClient.downloadModelEnvConfig(n, pid, dest);
+                        break;
+                    }
+                }
+            }
+
+        }
+
+        if (!(new File(dest).exists())) {
+            log.warn("not found model env config");
+            return null;
+        }
+
         // 解析环境配置xml
         ModelEnv modelEnv = (ModelEnv) XMLUtils.convertXmlFileToObject(ModelEnv.class, dest);
 
         if (modelEnv == null) {
-            log.error("parse model env config failed");
+            log.warn("parse model env config failed");
             // throw new ServiceException("parse model env config failed");
         }
 
         return modelEnv;
     }
+
 
     @Override
     public List<Node> getAvailableNodes(String pid) {
@@ -331,8 +373,10 @@ public class ModelServiceImpl implements IModelService {
         // 获取在线节点
         List<Node> availableNodes = nodeDao.findAllByStatus(NodeConstants.ONLINE);
 
-        // 根据pid获取模型环境描述文档信息中的计算资源标签规则描述
+        // 只支持模型容器版本大于等于 msMinVersion 的节点
+        availableNodes.removeIf(n -> !SpringUtils.getBean(INodeService.class).geVersion(n.getIp()));
 
+        // 根据pid获取模型环境描述文档信息中的计算资源标签规则描述
         ModelEnv config = getModelEnvConfig(pid);
 
         // 如果没有配置，返回所有在线节点
@@ -431,6 +475,27 @@ public class ModelServiceImpl implements IModelService {
     }
 
 
+    public void haOper(){
+        List<Model> model = modelDao.findAll();
+        for (Model m : model) {
+
+
+            if (!m.getMd5().equals("2b36a742c37dec471c6488cf68f26bc3")){
+                continue;
+            }
+
+            TimerTask task = new TimerTask() {
+                @Override
+                public void run() {
+                    haOper(m.getMd5());
+                }
+            };
+
+            ThreadPoolManager.instance().execute(task);
+        }
+    }
+
+
     /**
      * 容错处理
      *
@@ -512,7 +577,7 @@ public class ModelServiceImpl implements IModelService {
         haRecord.setOriginIp(deployedList);
         haRecord.setTargetIp(targetList);
         if (targetList.size() > 0) {
-            List<String> deployList = deployModel(new DeployDTO(model.getName(), targetList, null, modelMd5));
+            List<String> deployList = deployModel(new DeployDTO(model.getName(), null, modelMd5, targetList));
             haRecord.setDeployId(deployList);
             haRecordDao.save(haRecord);
         }

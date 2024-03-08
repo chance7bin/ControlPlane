@@ -35,6 +35,7 @@ public interface RemoteApiClient {
 
     /**
      * 根据模型部署包md5获取模型信息
+     * 模型容器版本需大于0.4.1
      *
      * @param pid 模型部署包md5
      * @return 模型信息
@@ -49,6 +50,7 @@ public interface RemoteApiClient {
 
     /**
      * 判断模型是否已部署
+     * 模型容器版本需大于0.4.1
      *
      * @return 模型列表
      */

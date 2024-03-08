@@ -3,10 +3,10 @@ package com.example.controlplane.controller;
 import com.example.controlplane.entity.dto.*;
 import com.example.controlplane.entity.dto.page.PageInfo;
 import com.example.controlplane.entity.po.DeployInfo;
+import com.example.controlplane.entity.po.FileInfo;
 import com.example.controlplane.entity.po.Node;
 import com.example.controlplane.exception.ServiceException;
 import com.example.controlplane.service.IModelService;
-import com.example.controlplane.utils.file.FileUtils;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +15,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -35,9 +34,13 @@ public class ModelController {
     @Autowired
     IModelService modelService;
 
+
     @ApiOperation("获取模型列表")
     @PostMapping("/list")
     public ApiResponse getModelList(@RequestBody FindDTO findDTO) {
+
+        findDTO.setSortField("viewCount");
+
         PortalResponse res = modelService.getModelList(findDTO);
         if (!PortalResponse.isSuccess(res)) {
             return ApiResponse.error(res.getMsg());
@@ -46,10 +49,10 @@ public class ModelController {
     }
 
     @ApiOperation("部署模型")
-    @PostMapping("/deploy")
+    @PostMapping(value = "/deploy")
     public ApiResponse deployModel(@RequestBody DeployDTO deployDTO) {
-        MultipartFile file = FileUtils.file2MultipartFile(new File("E:\\ModelServiceContainer\\createWordCloud.zip"));
-        deployDTO.setFile(file);
+        // MultipartFile file = FileUtils.file2MultipartFile(new File("E:\\ModelServiceContainer\\createWordCloud.zip"));
+        // deployDTO.setFile(file);
         modelService.deployModel(deployDTO);
         return ApiResponse.success();
     }
@@ -117,6 +120,13 @@ public class ModelController {
     @PostMapping("/ha/record/list")
     public ApiResponse getHaRecordList(@RequestBody FindDTO findDTO) {
         return ApiResponse.success(modelService.getHaRecordList(findDTO));
+    }
+
+    @ApiOperation("上传模型部署包")
+    @PostMapping(value = "/pkg/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ApiResponse uploadModelPkg(@RequestParam("file") MultipartFile file) {
+        FileInfo info = modelService.cacheFile(file);
+        return ApiResponse.success(info);
     }
 
 }

@@ -1,6 +1,8 @@
 package com.example.controlplane.component;
 
+import com.example.controlplane.service.IModelService;
 import com.example.controlplane.service.INodeService;
+import com.example.controlplane.utils.Threads;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -25,10 +27,19 @@ public class ScheduledTasks {
     @Autowired
     INodeService nodeService;
 
+    @Autowired
+    IModelService modelService;
+
     @Scheduled(fixedRate = _30MINUTE) // 每隔5秒执行一次
     public void updateRemoteNode() {
         log.info("update remote node...");
         nodeService.updateRemoteNode();
+
+        // 10s后开始ha处理
+        Threads.sleep(_5SECOND);
+        log.info("start ha oper...");
+        modelService.haOper();
+
     }
 
 }

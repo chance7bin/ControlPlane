@@ -237,15 +237,15 @@ public class SelectorUtils {
      * 判断表达式是否匹配
      */
     public static boolean match(String key, String value, String operator, List<Label> labels) {
-        String val1 = value;
-        String val2 = null;
+        String val1 = null; // 节点信息，待比较
+        String val2 = value; // 标签信息
         for (Label label : labels) {
             if (label.getKey().equals(key)) {
-                val2 = label.getValue();
+                val1 = label.getValue();
                 break;
             }
         }
-        if (val2 == null) {
+        if (val1 == null) {
             return false;
         }
 

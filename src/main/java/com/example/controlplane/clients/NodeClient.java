@@ -149,6 +149,7 @@ public class NodeClient {
 
     /**
      * 下载模型环境配置文档
+     * 模型容器版本需大于0.4.1
      *
      * @param ip   计算节点 IP
      * @param pid  模型部署包 ID

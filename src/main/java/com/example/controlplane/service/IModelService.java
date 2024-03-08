@@ -3,10 +3,8 @@ package com.example.controlplane.service;
 import com.example.controlplane.entity.bo.envconfg.ModelEnv;
 import com.example.controlplane.entity.dto.*;
 import com.example.controlplane.entity.dto.page.PageInfo;
-import com.example.controlplane.entity.po.DeployInfo;
-import com.example.controlplane.entity.po.HaRecord;
-import com.example.controlplane.entity.po.Model;
-import com.example.controlplane.entity.po.Node;
+import com.example.controlplane.entity.po.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -41,4 +39,10 @@ public interface IModelService {
     PageInfo<HaRecord> getHaRecordList(FindDTO findDTO);
 
     PageInfo<Model> getHaModelList(FindDTO findDTO);
+
+    void haOper();
+
+    FileInfo cacheFile(MultipartFile file);
+
+    FileInfo cacheFile(String md5, MultipartFile file);
 }

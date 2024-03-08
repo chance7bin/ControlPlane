@@ -12,4 +12,7 @@ public class NodeConstants {
 
     public static final String OFFLINE = "offline";
 
+
+    public static final String LOW_VERSION = "low version";
+
 }

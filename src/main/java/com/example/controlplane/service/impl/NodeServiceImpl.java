@@ -46,11 +46,12 @@ public class NodeServiceImpl implements INodeService {
     @Autowired
     private NodeDao nodeDao;
 
-    @Value("${nodePort}")
-    private String nodePort;
 
     @Autowired
     EngineClient engineClient;
+
+    @Value("${msMinVersion}")
+    String msMinVersion;
 
     @Override
     public List<JSONObject> getTaskNodeList() {
@@ -82,13 +83,14 @@ public class NodeServiceImpl implements INodeService {
                 TimerTask task = new TimerTask() {
                     @Override
                     public void run() {
-                        log.info("update node info: [{}]", ip);
+                        // log.info("update node info: [{}]", ip);
                         try {
                             Server server = getRemoteNodeStatus(ip);
                             Node node1 = getNodeByIp(ip);
                             server.setDeployDocker(engineClient.checkDocker(ip));
+                            String status = geVersion(ip) ? NodeConstants.ONLINE : NodeConstants.LOW_VERSION;
                             if (node1 != null) {
-                                node1.setStatus(NodeConstants.ONLINE);
+                                node1.setStatus(status);
                                 node1.setServer(server);
                                 updateNodeLabelsByServer(node1, server);
                                 node1.setUpdateTime(new Date());
@@ -96,7 +98,7 @@ public class NodeServiceImpl implements INodeService {
                             } else {
                                 Node node2 = new Node();
                                 node2.setIp(ip);
-                                node2.setStatus(NodeConstants.ONLINE);
+                                node2.setStatus(status);
                                 node2.setServer(server);
                                 updateNodeLabelsByServer(node2, server);
                                 nodeDao.insert(node2);
@@ -173,6 +175,23 @@ public class NodeServiceImpl implements INodeService {
         return nodeDao.findFirstById(id);
     }
 
+    @Override
+    public boolean geVersion(String ip){
+        Node node = nodeDao.findFirstByIp(ip);
+        if (node == null) {
+            // throw new ServiceException("node not found");
+            log.warn("node not found");
+            return false;
+        }
+        String version = node.getServer().getVersion();
+        if (version == null) {
+            // throw new ServiceException("server info not found");
+            // log.warn("version info not found");
+            return false;
+        }
+        return version.compareTo(msMinVersion) >= 0;
+    }
+
     private void updateNodeLabelsByServer(Node node, Server server) {
         List<Label> labels = node.getLabels();
         if (labels == null){
@@ -240,6 +259,9 @@ public class NodeServiceImpl implements INodeService {
         server.setCpuNum(jsonObject.getJSONArray("cpus").size());
         if (jsonObject.containsKey("cpuusage")) {
             server.setCpuUsage(jsonObject.getDouble("cpuusage"));
+        }
+        if (jsonObject.containsKey("version")) {
+            server.setVersion(jsonObject.getString("version"));
         }
         JSONArray disk = jsonObject.getJSONArray("disk");
         server.setProcessDisk(disk.getString(1));

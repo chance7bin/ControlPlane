@@ -710,22 +710,26 @@ public class FileUtils extends org.apache.commons.io.FileUtils
      * @param file 压缩包路径
      * @return {@link String} 解压后文件夹路径
      */
-    public static String unCompress(String file) {
+    public static String unzip(String file) {
         String target = file.substring(0, file.lastIndexOf("."));
-        if (file.endsWith(".zip")) {
-            ZipUtil.unzip(file, target);
-        } else if (file.endsWith(".rar")) {
+        return unzip(file, target);
+    }
+
+    public static String unzip(String from, String to) {
+        if (from.endsWith(".zip")) {
+            ZipUtil.unzip(from, to);
+        } else if (from.endsWith(".rar")) {
             // TODO
-        } else if (file.endsWith(".7z")) {
+        } else if (from.endsWith(".7z")) {
             // TODO
-        } else if (file.endsWith(".tar")) {
+        } else if (from.endsWith(".tar")) {
             // TODO
-        } else if (file.endsWith(".gz")) {
+        } else if (from.endsWith(".gz")) {
             // TODO
-        } else if (file.endsWith(".bz2")) {
+        } else if (from.endsWith(".bz2")) {
             // TODO
         }
-        return target;
+        return to;
     }
 
     /**
@@ -733,7 +737,7 @@ public class FileUtils extends org.apache.commons.io.FileUtils
      * @param source 源文件夹路径
      * @param target 目标压缩包路径
      */
-    public static void compress(String source, String target) {
+    public static void zip(String source, String target) {
         if (target.endsWith(".zip")) {
             ZipUtil.zip(source, target);
         } else if (target.endsWith(".rar")) {
@@ -763,6 +767,15 @@ public class FileUtils extends org.apache.commons.io.FileUtils
      */
     public static Boolean isDirectory(File file) {
         return FileUtil.isDirectory(file);
+    }
+
+    /**
+     * 拷贝文件
+     * @param from
+     * @param to
+     */
+    public static void copy(String from, String to) {
+        FileUtil.copy(from, to, true);
     }
 
 }

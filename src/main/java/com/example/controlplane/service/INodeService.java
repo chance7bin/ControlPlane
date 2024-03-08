@@ -30,4 +30,12 @@ public interface INodeService {
 
 
     Node getNodeById(String id);
+
+    /**
+     * 判断指定ip的模型容器是否大于等于要求版本
+     * @param ip ip
+     * @return 是否大于等于要求版本
+     */
+    boolean geVersion(String ip);
+
 }

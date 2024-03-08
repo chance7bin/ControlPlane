@@ -23,14 +23,8 @@ public class DeployDTO {
      */
     String modelName;
 
-
     /**
-     * 必选，部署模型的容器ID
-     */
-    List<String> targetIp;
-
-    /**
-     * 必选，模型部署包文件
+     * 非必选，模型部署包文件
      */
     MultipartFile file;
 
@@ -38,5 +32,13 @@ public class DeployDTO {
      * 非必选，模型部署包文件md5
      */
     String md5;
+
+    /**
+     * 必选，部署模型的容器ID
+     */
+    List<String> targetIp;
+
+
+
 
 }

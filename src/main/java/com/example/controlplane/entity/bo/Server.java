@@ -39,4 +39,7 @@ public class Server {
 
     Boolean deployDocker;
 
+    // 模型容器版本（需升级为0.4.1才可兼容该系统的功能模块）
+    String version;
+
 }
