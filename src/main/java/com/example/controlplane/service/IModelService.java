@@ -16,7 +16,7 @@ import java.util.List;
  */
 public interface IModelService {
 
-    PortalResponse getModelList(FindDTO findDTO);
+    PortalResponse getPortalModelList(FindDTO findDTO);
 
     /**
      * 部署模型
@@ -45,4 +45,9 @@ public interface IModelService {
     FileInfo cacheFile(MultipartFile file);
 
     FileInfo cacheFile(String md5, MultipartFile file);
+
+    Model getModelById(String id);
+
+    Model getModelByMd5(String md5);
+
 }

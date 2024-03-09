@@ -9,6 +9,8 @@ import org.springframework.data.mongodb.repository.MongoRepository;
  */
 public interface ModelDao extends MongoRepository<Model, String> {
 
+    Model findFirstById(String id);
 
+    Model findFirstByMd5(String md5);
 
 }

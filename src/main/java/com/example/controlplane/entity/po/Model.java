@@ -6,6 +6,8 @@ import lombok.Data;
 import java.util.List;
 
 /**
+ * 控制平面托管的模型（配置了容错规则的）
+ *
  * @author 7bin
  * @date 2024/02/27
  */

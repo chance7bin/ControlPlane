@@ -14,6 +14,12 @@ import java.util.List;
 @Data
 public class HaRecord extends BaseEntity {
 
+    String modelId;
+
+    // 用modelId关联
+    // Model model;
+    String modelName;
+
     List<String> originIp;
 
     List<String> targetIp;

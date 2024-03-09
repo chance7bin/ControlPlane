@@ -85,7 +85,7 @@ public class ModelServiceImpl implements IModelService {
 
 
     @Override
-    public PortalResponse getModelList(FindDTO findDTO) {
+    public PortalResponse getPortalModelList(FindDTO findDTO) {
         return portalClient.getDeployModel(findDTO);
     }
 
@@ -123,6 +123,16 @@ public class ModelServiceImpl implements IModelService {
         }
 
         return fileInfo;
+    }
+
+    @Override
+    public Model getModelById(String id) {
+        return modelDao.findFirstById(id);
+    }
+
+    @Override
+    public Model getModelByMd5(String md5) {
+        return modelDao.findFirstByMd5(md5);
     }
 
     public FileInfo cacheFile(MultipartFile file){
@@ -456,6 +466,11 @@ public class ModelServiceImpl implements IModelService {
     @Override
     public PageInfo<HaRecord> getHaRecordList(FindDTO findDTO) {
         Page<HaRecord> page = haRecordDao.findAll(findDTO.getPageable());
+        // List<HaRecord> content = page.getContent();
+        // for (HaRecord haRecord : content) {
+        //     Model model = modelDao.findFirstById(haRecord.getModelId());
+        //     haRecord.setModel(model);
+        // }
         PageInfo<HaRecord> res = PageInfo.of(page);
         return res;
     }
@@ -574,6 +589,8 @@ public class ModelServiceImpl implements IModelService {
 
         // 部署模型
         HaRecord haRecord = new HaRecord();
+        haRecord.setModelId(model.getId());
+        haRecord.setModelName(model.getName());
         haRecord.setOriginIp(deployedList);
         haRecord.setTargetIp(targetList);
         if (targetList.size() > 0) {

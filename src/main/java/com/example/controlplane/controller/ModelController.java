@@ -5,7 +5,6 @@ import com.example.controlplane.entity.dto.page.PageInfo;
 import com.example.controlplane.entity.po.DeployInfo;
 import com.example.controlplane.entity.po.FileInfo;
 import com.example.controlplane.entity.po.Node;
-import com.example.controlplane.exception.ServiceException;
 import com.example.controlplane.service.IModelService;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
@@ -36,12 +35,12 @@ public class ModelController {
 
 
     @ApiOperation("获取模型列表")
-    @PostMapping("/list")
-    public ApiResponse getModelList(@RequestBody FindDTO findDTO) {
+    @PostMapping("/portal/list")
+    public ApiResponse getPortalModelList(@RequestBody FindDTO findDTO) {
 
         findDTO.setSortField("viewCount");
 
-        PortalResponse res = modelService.getModelList(findDTO);
+        PortalResponse res = modelService.getPortalModelList(findDTO);
         if (!PortalResponse.isSuccess(res)) {
             return ApiResponse.error(res.getMsg());
         }
@@ -95,9 +94,11 @@ public class ModelController {
     ) {
         PolicyDTO policyDTO = new PolicyDTO(modelName, file, modelMd5, policyId, policyName, haMode, count, targetIp);
         if (policyDTO.getModelMd5() == null && policyDTO.getFile() == null) {
-            throw new ServiceException("file和md5两者必须有其一!");
+            return ApiResponse.error("file和md5两者必须有其一!");
         }
-
+        if (modelService.getModelByMd5(modelMd5) != null){
+            return ApiResponse.error("一个模型只允许配置一个容错规则!");
+        }
         modelService.configHa(policyDTO);
         return ApiResponse.success();
     }

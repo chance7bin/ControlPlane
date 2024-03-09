@@ -46,7 +46,7 @@ public class SelectorUtils {
     public static List<Node> sort(List<Preference> preferences, List<Node> nodes){
 
         if (nodes == null || nodes.isEmpty()){
-            return null;
+            return new ArrayList<>();
         }
 
         if (preferences == null || preferences.isEmpty()){
@@ -194,7 +194,7 @@ public class SelectorUtils {
     public static List<Node> filter(Required required, List<Node> nodes) {
 
         if (nodes == null || nodes.isEmpty()){
-            return null;
+            return new ArrayList<>();
         }
 
         if (required == null || (required.getMatchLabels().getLabels().isEmpty() && required.getMatchExpressions().getExpressions().isEmpty())){
