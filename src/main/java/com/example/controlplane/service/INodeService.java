@@ -38,4 +38,6 @@ public interface INodeService {
      */
     boolean geVersion(String ip);
 
+    boolean geVersion(Server server);
+
 }

@@ -88,10 +88,12 @@ public class NodeServiceImpl implements INodeService {
                             Server server = getRemoteNodeStatus(ip);
                             Node node1 = getNodeByIp(ip);
                             server.setDeployDocker(engineClient.checkDocker(ip));
-                            String status = geVersion(ip) ? NodeConstants.ONLINE : NodeConstants.LOW_VERSION;
+                            String status = geVersion(server) ? NodeConstants.ONLINE : NodeConstants.LOW_VERSION;
+                            int order = geVersion(server) ? NodeConstants.ONLINE_ORDER : NodeConstants.LOW_VERSION_ORDER;
                             if (node1 != null) {
                                 node1.setStatus(status);
                                 node1.setServer(server);
+                                node1.setOrder(order);
                                 updateNodeLabelsByServer(node1, server);
                                 node1.setUpdateTime(new Date());
                                 nodeDao.save(node1);
@@ -100,6 +102,7 @@ public class NodeServiceImpl implements INodeService {
                                 node2.setIp(ip);
                                 node2.setStatus(status);
                                 node2.setServer(server);
+                                node2.setOrder(order);
                                 updateNodeLabelsByServer(node2, server);
                                 nodeDao.insert(node2);
                             }
@@ -123,6 +126,8 @@ public class NodeServiceImpl implements INodeService {
     @Override
     public PageInfo<Node> getNodeList(FindDTO findDTO) {
 
+        findDTO.setSortField("order");
+        findDTO.setAsc(true);
         Page<Node> nodePage = nodeDao.findAll(findDTO.getPageable());
         PageInfo<Node> res = PageInfo.of(nodePage);
         return res;
@@ -182,8 +187,15 @@ public class NodeServiceImpl implements INodeService {
             // throw new ServiceException("node not found");
             log.warn("node not found");
             return false;
+        } else if (NodeConstants.OFFLINE.equals(node.getStatus())){
+            return false;
         }
-        String version = node.getServer().getVersion();
+        return geVersion(node.getServer());
+    }
+
+    @Override
+    public boolean geVersion(Server server) {
+        String version = server.getVersion();
         if (version == null) {
             // throw new ServiceException("server info not found");
             // log.warn("version info not found");
@@ -233,12 +245,14 @@ public class NodeServiceImpl implements INodeService {
         Node node1 = getNodeByIp(ip);
         if (node1 != null) {
             node1.setStatus(NodeConstants.OFFLINE);
+            node1.setOrder(NodeConstants.OFFLINE_ORDER);
             node1.setUpdateTime(new Date());
             nodeDao.save(node1);
         } else {
             Node node2 = new Node();
             node2.setIp(ip);
             node2.setStatus(NodeConstants.OFFLINE);
+            node2.setOrder(NodeConstants.OFFLINE_ORDER);
             nodeDao.insert(node2);
         }
     }

@@ -1,7 +1,9 @@
 package com.example.controlplane.entity.bo;
 
 import io.swagger.annotations.ApiModelProperty;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * 标签
@@ -10,6 +12,8 @@ import lombok.Data;
  * @date 2024/02/27
  */
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class Label {
 
     String key;

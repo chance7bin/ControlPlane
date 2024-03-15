@@ -30,7 +30,9 @@ public interface IModelService {
 
     ModelEnv getModelEnvConfig(String pid);
 
-    List<Node> getAvailableNodes(String pid);
+    List<Node> getAvailableNodesContainDeployed(String pid);
+
+    List<Node> getAvailableNodesExcludeDeployed(String pid);
 
     void configHa(PolicyDTO policyDTO);
 
@@ -49,5 +51,7 @@ public interface IModelService {
     Model getModelById(String id);
 
     Model getModelByMd5(String md5);
+
+    DeployInfo getDeployInfoById(String id);
 
 }

@@ -5,8 +5,6 @@ import com.example.controlplane.service.INodeService;
 import com.example.controlplane.utils.Threads;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
 
 /**
  * 定时任务
@@ -15,7 +13,7 @@ import org.springframework.stereotype.Component;
  * @date 2024/02/27
  */
 @Slf4j
-@Component
+// @Component
 public class ScheduledTasks {
 
     private static final int _5MINUTE = 5 * 60 * 1000;
@@ -30,7 +28,7 @@ public class ScheduledTasks {
     @Autowired
     IModelService modelService;
 
-    @Scheduled(fixedRate = _30MINUTE) // 每隔5秒执行一次
+    // @Scheduled(fixedRate = _5SECOND) // 每隔5秒执行一次
     public void updateRemoteNode() {
         log.info("update remote node...");
         nodeService.updateRemoteNode();

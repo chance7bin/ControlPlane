@@ -391,33 +391,30 @@ public class FileUtils extends org.apache.commons.io.FileUtils
         }
     }
 
-    // 文件大小字符串比较 GB MB KB B
+    // 文件大小字符串比较 GB MB KB B (没有单位的直接比较大小)
     public static int compare(String size1, String size2){
-        long s1 = 0;
-        long s2 = 0;
-        if (size1.contains("GB")){
-            s1 = Long.parseLong(size1.replace("GB", "")) * 1024 * 1024 * 1024;
-        } else if (size1.contains("MB")){
-            s1 = Long.parseLong(size1.replace("MB", "")) * 1024 * 1024;
-        } else if (size1.contains("KB")){
-            s1 = Long.parseLong(size1.replace("KB", "")) * 1024;
-        } else if (size1.contains("B")){
-            s1 = Long.parseLong(size1.replace("B", ""));
-        }
-        if (size2.contains("GB")){
-            s2 = Long.parseLong(size2.replace("GB", "")) * 1024 * 1024 * 1024;
-        } else if (size2.contains("MB")){
-            s2 = Long.parseLong(size2.replace("MB", "")) * 1024 * 1024;
-        } else if (size2.contains("KB")){
-            s2 = Long.parseLong(size2.replace("KB", "")) * 1024;
-        } else if (size2.contains("B")){
-            s2 = Long.parseLong(size2.replace("B", ""));
-        }
-        return Long.compare(s1, s2);
+        double s1 = 0;
+        double s2 = 0;
+        s1 = Convert2SameUnit(size1);
+        s2 = Convert2SameUnit(size2);
+        return Double.compare(s1, s2);
     }
 
-
-
+    private static double Convert2SameUnit(String size) {
+        double s;
+        if (size.contains("GB")){
+            s = Double.parseDouble(size.replace("GB", "")) * 1024 * 1024 * 1024;
+        } else if (size.contains("MB")){
+            s = Double.parseDouble(size.replace("MB", "")) * 1024 * 1024;
+        } else if (size.contains("KB")){
+            s = Double.parseDouble(size.replace("KB", "")) * 1024;
+        } else if (size.contains("B")){
+            s = Double.parseDouble(size.replace("B", ""));
+        } else {
+            s = Double.parseDouble(size);
+        }
+        return s;
+    }
 
     /**
      * 获得路径下的文件路径列表

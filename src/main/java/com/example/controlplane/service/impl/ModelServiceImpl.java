@@ -116,8 +116,12 @@ public class ModelServiceImpl implements IModelService {
         String tmpDir = savePath + "/tmp/" + fileInfo.getMd5();
         try {
             FileUtils.unzip(savePath + fileInfo.getFilePath(), tmpDir);
-            String envConfig = savePath + "/envconfig/" + fileInfo.getMd5() + ".xml";
-            FileUtils.copy(tmpDir + "/model/env_config.xml", envConfig);
+            String target = savePath + "/envconfig/" + fileInfo.getMd5() + ".xml";
+            String envConfig = tmpDir + "/model/env_config.xml";
+            // 如果配置文件存在的话拷贝一份
+            if (new File(envConfig).exists()) {
+                FileUtils.copy(envConfig, target);
+            }
         } finally {
             FileUtils.delete(tmpDir);
         }
@@ -133,6 +137,15 @@ public class ModelServiceImpl implements IModelService {
     @Override
     public Model getModelByMd5(String md5) {
         return modelDao.findFirstByMd5(md5);
+    }
+
+    @Override
+    public DeployInfo getDeployInfoById(String id) {
+        DeployInfo info = deployInfoDao.findFirstById(id);
+        if (info == null) {
+            throw new ServiceException("deploy info not found");
+        }
+        return info;
     }
 
     public FileInfo cacheFile(MultipartFile file){
@@ -344,7 +357,7 @@ public class ModelServiceImpl implements IModelService {
 
 
             for (String n : dn) {
-                // 该接口支支持特定版本的模型容器
+                // 该接口只支持特定版本的模型容器
                 if (SpringUtils.getBean(INodeService.class).geVersion(n)) {
                     if (SpringUtils.getBean(INodeService.class).geVersion(n)) {
                         nodeClient.downloadModelEnvConfig(n, pid, dest);
@@ -371,10 +384,21 @@ public class ModelServiceImpl implements IModelService {
         return modelEnv;
     }
 
+    // 获取排序后的节点列表（包括已部署的节点）
+    @Override
+    public List<Node> getAvailableNodesContainDeployed(String pid){
+        return getAvailableNodes(pid, false);
+    }
 
     @Override
-    public List<Node> getAvailableNodes(String pid) {
+    public List<Node> getAvailableNodesExcludeDeployed(String pid) {
 
+        return getAvailableNodes(pid, true);
+
+    }
+
+
+    List<Node> getAvailableNodes(String pid, boolean excludeDeployed) {
         // 更新集群节点信息
         // 获取INodeService的bean并调用其方法
         INodeService ns = SpringUtils.getBean(INodeService.class);
@@ -386,6 +410,14 @@ public class ModelServiceImpl implements IModelService {
         // 只支持模型容器版本大于等于 msMinVersion 的节点
         availableNodes.removeIf(n -> !SpringUtils.getBean(INodeService.class).geVersion(n.getIp()));
 
+        // 排除已部署模型的节点
+        if (excludeDeployed){
+            List<String> deployedNodes = taskServerService.getDeployedNodeByPid(pid);
+            for (String dn : deployedNodes) {
+                availableNodes.removeIf(on -> on.getIp().equals(dn));
+            }
+        }
+
         // 根据pid获取模型环境描述文档信息中的计算资源标签规则描述
         ModelEnv config = getModelEnvConfig(pid);
 
@@ -395,12 +427,6 @@ public class ModelServiceImpl implements IModelService {
         }
 
         Selector selector = config.getSelector();
-        
-        // 排除已部署模型的节点
-        List<String> deployedNodes = taskServerService.getDeployedNodeByPid(pid);
-        for (String dn : deployedNodes) {
-            availableNodes.removeIf(on -> on.getIp().equals(dn));
-        }
 
         // 根据Required过滤节点
         availableNodes = SelectorUtils.filter(selector.getRequired(), availableNodes);
@@ -408,8 +434,27 @@ public class ModelServiceImpl implements IModelService {
         // 根据Preference排序节点
         availableNodes = SelectorUtils.sort(selector.getPreferences(), availableNodes);
 
+        // 测试专用
+        // availableNodes = test4GetAvailableNodesTest();
+
         return availableNodes;
     }
+
+
+
+    // 只用于做测试，因为selector的preference规则还有bug
+    List<Node> test4GetAvailableNodesTest() {
+
+        List<String> ips = new ArrayList<>();
+
+        List<Node> res = new ArrayList<>();
+        for (String ip : ips) {
+            res.add(nodeDao.findFirstByIp(ip));
+        }
+
+        return res;
+    }
+
 
     @Override
     public void configHa(PolicyDTO policyDTO) {
@@ -494,8 +539,8 @@ public class ModelServiceImpl implements IModelService {
         List<Model> model = modelDao.findAll();
         for (Model m : model) {
 
-
-            if (!m.getMd5().equals("2b36a742c37dec471c6488cf68f26bc3")){
+            // md5长度小于5，是测试样例
+            if (m.getMd5().length() < 5){
                 continue;
             }
 
@@ -522,49 +567,79 @@ public class ModelServiceImpl implements IModelService {
         Model model = templateDao.getModelByMd5(modelMd5);
         Policy policy = model.getPolicy();
 
+        // List<Node> availableList = getAvailableNodesExcludeDeployed(modelMd5);
+
         // 获取部署了当前模型的节点列表
-        List<String> originalList = taskServerService.getDeployedNodeByPid(modelMd5);
-        List<Node> availableList = getAvailableNodes(modelMd5);
+        // List<String> originalList = taskServerService.getDeployedNodeByPid(modelMd5);
 
-        // 获取deployedList中不在availableList的节点
-        List<String> toBeRemoved = new ArrayList<>();
-        for (String ip : originalList) {
-            boolean found = false;
-            for (Node node : availableList) {
-                if (node.getIp().equals(ip)) {
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                toBeRemoved.add(ip);
-            }
-        }
-        offlineService(toBeRemoved, modelMd5);
+        // 获取deployedList中不在availableList的节点(有点问题，需不需要下线由容错规则来判断)
+        // List<String> toBeRemoved = new ArrayList<>();
+        // for (String ip : originalList) {
+        //     boolean found = false;
+        //     for (Node node : availableList) {
+        //         if (node.getIp().equals(ip)) {
+        //             found = true;
+        //             break;
+        //         }
+        //     }
+        //     if (!found) {
+        //         toBeRemoved.add(ip);
+        //     }
+        // }
+        // offlineService(toBeRemoved, modelMd5);
 
-        // 再获取一次部署了当前模型的节点列表
+        List<Node> availableList = new ArrayList<>();
+        // total deploy info list
+        List<String> tdil = new ArrayList<>();
+        // total target list
+        List<String> ttl = new ArrayList<>();
+        // 获取部署了当前模型的节点列表
         List<String> deployedList = taskServerService.getDeployedNodeByPid(modelMd5);
-
         List<String> targetList = new ArrayList<>();
         switch (policy.getHaMode()) {
             case PolicyMode.EXACTLY:
 
+                // 包含已部署的节点
+                availableList = getAvailableNodesContainDeployed(modelMd5);
 
-                if (deployedList.size() < policy.getCount()) {
-                    int cnt = policy.getCount() - deployedList.size();
-                    for (Node node : availableList) {
-                        if (!deployedList.contains(node.getIp())) {
-                            targetList.add(node.getIp());
-                            if (--cnt == 0) {
-                                break;
-                            }
-                        }
+                List<String> toBeRemoved = new ArrayList<>(); // 需要下线的
+                List<String> noChange = new ArrayList<>(); // 不用变化的
+
+                for (int i = 0; i < Math.min(policy.getCount(), availableList.size()); i++) {
+                    Node an = availableList.get(i);
+                    if (deployedList.contains(an.getIp())) {
+                        // 可用节点在已部署节点列表中
+                        noChange.add(an.getIp());
                     }
                 }
 
+                int remain = policy.getCount() - noChange.size();
+                for (int i = 0; i < availableList.size() && remain > 0; i++) {
+                    Node an = availableList.get(i);
+                    if (deployedList.contains(an.getIp()) && !noChange.contains(an.getIp())) {
+                        // 可用节点在已部署节点列表中，但不在noChange中
+                        noChange.add(an.getIp());
+                        remain--;
+                    } else if (!deployedList.contains(an.getIp())){
+                        // 可用节点不在已部署节点列表中
+                        targetList.add(an.getIp());
+                        remain--;
+                    }
+                }
+
+                // 获取下线节点
+                for (String n : deployedList) {
+                    if (!noChange.contains(n)) {
+                        toBeRemoved.add(n);
+                    }
+                }
+                // deploy info list
+                List<String> dil = offlineService(toBeRemoved, modelMd5);
+                tdil.addAll(dil);
+                ttl.addAll(toBeRemoved);
                 break;
             case PolicyMode.ALL:
-
+                availableList = getAvailableNodesExcludeDeployed(modelMd5);
                 // 如果availableList不在deployedList中，则部署
                 for (Node node : availableList) {
                     if (!deployedList.contains(node.getIp())) {
@@ -574,7 +649,7 @@ public class ModelServiceImpl implements IModelService {
 
                 break;
             case PolicyMode.NODES:
-
+                availableList = getAvailableNodesExcludeDeployed(modelMd5);
                 // 如果availableList在policy.getTargetIp()中，则部署
                 for (Node node : availableList) {
                     if (policy.getTargetIp().contains(node.getIp())) {
@@ -587,22 +662,41 @@ public class ModelServiceImpl implements IModelService {
                 throw new ServiceException("unknown ha mode");
         }
 
-        // 部署模型
         HaRecord haRecord = new HaRecord();
         haRecord.setModelId(model.getId());
         haRecord.setModelName(model.getName());
         haRecord.setOriginIp(deployedList);
-        haRecord.setTargetIp(targetList);
+        ttl.addAll(targetList);
+        haRecord.setTargetIp(ttl);
+        // 部署模型
         if (targetList.size() > 0) {
             List<String> deployList = deployModel(new DeployDTO(model.getName(), null, modelMd5, targetList));
-            haRecord.setDeployId(deployList);
-            haRecordDao.save(haRecord);
+            tdil.addAll(deployList);
+        }
+        haRecord.setDeployId(tdil);
+        if (tdil.size() > 0) {
+            haRecordDao.insert(haRecord);
         }
 
 
     }
 
-    private void offlineService(String ip, String md5) {
+    /**
+     * 下线模型服务
+     *
+     * @param ip  计算节点 IP
+     * @param md5 模型部署包 md5
+     * @return 部署记录id
+     */
+    private String offlineService(String ip, String md5) {
+
+        // 下线流程记录在DeployInfo中
+        DeployInfo deployInfo = new DeployInfo();
+        deployInfo.setTargetIp(ip);
+        deployInfo.setModelMd5(md5);
+        deployInfo.setStatus(DeployStatus.OFFLINE);
+        deployInfo.setModelName(modelDao.findFirstByMd5(md5).getName());
+
         // 看下这个ip能不能ping通
         try {
             nodeClient.ping(ip);
@@ -616,23 +710,26 @@ public class ModelServiceImpl implements IModelService {
                     nodeClient.stopModelService(ip, msid);
                 } catch (Exception e) {
                     log.error("stop model service [{}] on [{}] failed: {}", msid, ip, e.getMessage());
+                    deployInfo.setStatus(DeployStatus.OFFLINE_FAILED);
                 }
             }
 
-
         } catch (Exception e) {
-
             // ping不通的话就不做处理了
-
+            deployInfo.setStatus(DeployStatus.OFFLINE_FAILED);
         }
+
+        deployInfoDao.insert(deployInfo);
+        return deployInfo.getId();
     }
 
-    private void offlineService(List<String> targetIp, String md5) {
-
+    private List<String> offlineService(List<String> targetIp, String md5) {
+        List<String> res = new ArrayList<>();
         for (String ip : targetIp) {
-            offlineService(ip, md5);
+            String did = offlineService(ip, md5);
+            res.add(did);
         }
-
+        return res;
     }
 
     private Policy buildPolicy(Policy policy) {

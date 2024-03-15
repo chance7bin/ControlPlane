@@ -20,8 +20,18 @@ public class Node extends BaseEntity {
 
     String status;
 
+    /**
+     * 节点列表排序规则
+     */
+    int order;
+
     Server server;
 
     List<Label> labels;
+
+    /**
+     * 优先级函数计算后的节点得分
+     */
+    int score;
 
 }

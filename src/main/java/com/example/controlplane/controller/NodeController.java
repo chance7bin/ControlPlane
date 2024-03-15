@@ -31,6 +31,8 @@ public class NodeController {
         return ApiResponse.success(nodeService.getTaskNodeList());
     }
 
+
+
     @ApiOperation("根据ip获取节点信息")
     @GetMapping("/info/ip/{ip}")
     public ApiResponse getNodeInfoByIp(@PathVariable("ip") String ip) {
@@ -74,6 +76,13 @@ public class NodeController {
     public ApiResponse getAvailableNode(@PathVariable("md5") String md5) {
         // return ApiResponse.success(nodeService.getAvailableNode(md5));
         return null;
+    }
+
+    @ApiOperation("刷新节点信息")
+    @GetMapping("/refresh")
+    public ApiResponse refreshNodeList() {
+        nodeService.updateRemoteNode();
+        return ApiResponse.success();
     }
 
 }

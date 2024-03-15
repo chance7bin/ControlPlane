@@ -53,7 +53,48 @@ public class SelectorUtils {
             return new ArrayList<>(nodes);
         }
 
+        List<Node> copyNodes = new ArrayList<>(nodes);
 
+        for (Node node : nodes) {
+            node.setScore(score(node, preferences));
+        }
+
+        copyNodes.sort((o1, o2) -> o2.getScore() - o1.getScore());
+
+        return copyNodes;
+
+    }
+
+    // 优先级函数，计算节点得分
+    private static int score(Node node, List<Preference> preferences){
+        int score = 0;
+        for (Preference preference : preferences) {
+            MatchLabels matchLabels = preference.getMatchLabels();
+            if (matchLabels != null && !matchLabels.getLabels().isEmpty()){
+                for (com.example.controlplane.entity.bo.envconfg.Label lb : matchLabels.getLabels()) {
+                    Label label = node.getLabels().stream().filter(l -> l.getKey().equals(lb.getKey())).findFirst().orElse(null);
+                    if (label != null && label.getValue().equals(lb.getValue())){
+                        score += preference.getWeight();
+                    }
+                }
+            }
+
+            if (preference.getMatchExpressions() != null && !preference.getMatchExpressions().getExpressions().isEmpty()){
+                MatchExpressions matchExpressions = preference.getMatchExpressions();
+                for (Expression exp : matchExpressions.getExpressions()) {
+                    Label label = node.getLabels().stream().filter(l -> l.getKey().equals(exp.getKey())).findFirst().orElse(null);
+                    if (label != null && match(exp.getKey(), exp.getValue(), exp.getOperator(), node.getLabels())){
+                        score += preference.getWeight();
+                    }
+                }
+            }
+        }
+        return score;
+    }
+
+
+    // 旧版本的排序规则 已废弃
+    private static List<Node> deprecatedSort(List<Preference> preferences, List<Node> nodes){
         List<Node> result = new ArrayList<>();
 
         // 先根据preference的weight字段进行排序

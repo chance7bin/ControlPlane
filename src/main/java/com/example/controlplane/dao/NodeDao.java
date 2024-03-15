@@ -1,6 +1,7 @@
 package com.example.controlplane.dao;
 
 import com.example.controlplane.entity.po.Node;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.List;
@@ -15,5 +16,9 @@ public interface NodeDao extends MongoRepository<Node, String> {
 
     Node findFirstById(String id);
 
+
+
     List<Node> findAllByStatus(String status);
+
+    List<Node> findAllByStatus(String status, Pageable pageable);
 }

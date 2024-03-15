@@ -1,6 +1,7 @@
 package com.example.controlplane.controller;
 
 import com.example.controlplane.entity.dto.*;
+import com.example.controlplane.entity.dto.node.NodeDTO;
 import com.example.controlplane.entity.dto.page.PageInfo;
 import com.example.controlplane.entity.po.DeployInfo;
 import com.example.controlplane.entity.po.FileInfo;
@@ -72,9 +73,16 @@ public class ModelController {
     @ApiOperation("获取候选目标节点集合")
     @GetMapping("/nodes/available/{pid}")
     public ApiResponse getAvailableNodes(@PathVariable("pid") String pid) {
+        // List<Node> availableNodes = modelService.getAvailableNodesExcludeDeployed(pid);
+        List<Node> availableNodes = modelService.getAvailableNodesContainDeployed(pid);
+        // List<String> nodeIpList = availableNodes == null ? new ArrayList<>() : availableNodes.stream().map(Node::getIp).collect(Collectors.toList());
+        // 返回ip，score
+        List<NodeDTO> nodeIpList = availableNodes == null
+            ? new ArrayList<>()
+            : availableNodes.stream()
+                .map(node -> new NodeDTO(node.getIp(), node.getScore()))
+                .collect(Collectors.toList());
 
-        List<Node> availableNodes = modelService.getAvailableNodes(pid);
-        List<String> nodeIpList = availableNodes == null ? new ArrayList<>() : availableNodes.stream().map(Node::getIp).collect(Collectors.toList());
         return ApiResponse.success(nodeIpList);
 
     }
@@ -128,6 +136,18 @@ public class ModelController {
     public ApiResponse uploadModelPkg(@RequestParam("file") MultipartFile file) {
         FileInfo info = modelService.cacheFile(file);
         return ApiResponse.success(info);
+    }
+
+    @ApiOperation("根据id查看部署流程信息")
+    @GetMapping("/deploy/info/{id}")
+    public ApiResponse getDeployInfo(@PathVariable("id") String id) {
+        return ApiResponse.success(modelService.getDeployInfoById(id));
+    }
+
+    @ApiOperation("容错处理")
+    @GetMapping("/haOper")
+    public void haOper() {
+        modelService.haOper();
     }
 
 }

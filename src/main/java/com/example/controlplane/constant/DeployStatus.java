@@ -16,5 +16,9 @@ public class DeployStatus {
 
     public final static String FAILED = "FAILED";
 
+    public final static String OFFLINE = "OFFLINE";
+
+    public final static String OFFLINE_FAILED = "OFFLINE FAILED";
+
 
 }
