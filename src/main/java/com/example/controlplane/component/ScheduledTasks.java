@@ -33,7 +33,7 @@ public class ScheduledTasks {
         log.info("update remote node...");
         nodeService.updateRemoteNode();
 
-        // 10s后开始ha处理
+        // 5s后开始ha处理
         Threads.sleep(_5SECOND);
         log.info("start ha oper...");
         modelService.haOper();
