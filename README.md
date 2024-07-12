@@ -15,19 +15,25 @@
 
 ## 系统截图
 **模型资源信息界面**
+<br/>
 <img src="./doc/images/4.png" width="80%" />
 
 **计算资源信息界面**
+<br/>
 <img src="./doc/images/5.png" width="80%" />
 
 **模型部署迁移界面**
+<br/>
 <img src="./doc/images/6.png" width="80%" />
 
 **部署流程监控界面**
+<br/>
 <img src="./doc/images/7.png" width="80%" />
 
 **容错配置界面**
+<br/>
 <img src="./doc/images/8.png" width="80%" />
 
 **容错处理记录**
+<br/>
 <img src="./doc/images/9.png" width="80%" />
